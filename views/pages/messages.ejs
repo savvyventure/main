@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>Messages</h1>
+</div>
+
+<!-- Pending Chat Requests -->
+<% if (pendingRequests.length > 0) { %>
+  <div class="detail-section">
+    <h2>Chat Requests</h2>
+    <div class="requests-list">
+      <% pendingRequests.forEach(req => { %>
+        <div class="request-card">
+          <div class="request-info">
+            <a href="/profile/<%= req.username %>"><%= req.username %></a>
+            wants to chat with you
+          </div>
+          <div class="request-actions">
+            <form action="/messages/consent/<%= req.id %>/accept" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-primary btn-sm">Accept</button>
+            </form>
+            <form action="/messages/consent/<%= req.id %>/decline" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-outline btn-sm">Decline</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Conversations -->
+<div class="detail-section">
+  <h2>Conversations</h2>
+  <% if (conversations.length === 0) { %>
+    <div class="empty-state">
+      <p>No conversations yet. Request to chat with someone from their profile page!</p>
+    </div>
+  <% } else { %>
+    <div class="conversations-list">
+      <% conversations.forEach(conv => { %>
+        <a href="/messages/chat/<%= conv.id %>" class="conversation-card">
+          <div class="conversation-info">
+            <strong><%= conv.username %></strong>
+            <p class="conversation-preview"><%= conv.last_message %></p>
+          </div>
+          <div class="conversation-meta">
+            <span class="conversation-time">
+              <%= new Date(conv.last_message_at).toLocaleDateString() %>
+            </span>
+            <% if (conv.unread_count > 0) { %>
+              <span class="unread-badge"><%= conv.unread_count %></span>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

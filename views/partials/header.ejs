@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="nav-logo">SyncUp</a>
+      <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+        &#9776;
+      </button>
+      <div class="nav-links">
+        <a href="/events">Events</a>
+        <% if (currentUser) { %>
+          <a href="/events/new/create">Create Event</a>
+          <a href="/messages">Messages</a>
+          <a href="/profile/<%= currentUser.username %>">Profile</a>
+          <form action="/auth/logout" method="POST" class="nav-logout-form">
+            <button type="submit" class="btn btn-outline btn-sm">Log Out</button>
+          </form>
+        <% } else { %>
+          <a href="/auth/login">Log In</a>
+          <a href="/auth/signup" class="btn btn-primary btn-sm">Sign Up</a>
+        <% } %>
+      </div>
+    </div>
+  </nav>
+  <main class="container main-content">
