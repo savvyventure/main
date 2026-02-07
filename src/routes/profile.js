@@ -32,11 +32,50 @@ router.get('/:username', (req, res) => {
     ORDER BY r.created_at DESC
   `).all(user.id);
 
+  // Chat status and block status for logged-in users viewing other profiles
+  let chatStatus = null;  // null, 'pending_sent', 'pending_received', 'connected', 'declined'
+  let isBlocked = false;
+  let hasBlockedYou = false;
+
+  if (req.session.user && req.session.user.id !== user.id) {
+    const currentUserId = req.session.user.id;
+
+    // Check chat consent status
+    const consent = db.prepare(`
+      SELECT * FROM chat_consent
+      WHERE (requester_id = ? AND target_id = ?) OR (requester_id = ? AND target_id = ?)
+    `).get(currentUserId, user.id, user.id, currentUserId);
+
+    if (consent) {
+      if (consent.status === 'accepted') {
+        chatStatus = 'connected';
+      } else if (consent.status === 'pending') {
+        chatStatus = consent.requester_id === currentUserId ? 'pending_sent' : 'pending_received';
+      } else if (consent.status === 'declined') {
+        chatStatus = 'declined';
+      }
+    }
+
+    // Check block status
+    const blockByMe = db.prepare(
+      'SELECT id FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?'
+    ).get(currentUserId, user.id);
+    isBlocked = !!blockByMe;
+
+    const blockByThem = db.prepare(
+      'SELECT id FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?'
+    ).get(user.id, currentUserId);
+    hasBlockedYou = !!blockByThem;
+  }
+
   res.render('pages/profile', {
     title: `${user.username} - SyncUp`,
     profileUser: user,
     events,
     reviews,
+    chatStatus,
+    isBlocked,
+    hasBlockedYou,
   });
 });
 

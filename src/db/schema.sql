@@ -138,6 +138,19 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 -- ============================================================
+-- USER BLOCKS: safety feature to block unwanted contacts
+-- ============================================================
+CREATE TABLE IF NOT EXISTS user_blocks (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    blocker_id    INTEGER NOT NULL,                    -- user who blocked
+    blocked_id    INTEGER NOT NULL,                    -- user who got blocked
+    created_at    TEXT    DEFAULT (datetime('now')),
+    FOREIGN KEY (blocker_id) REFERENCES users(id),
+    FOREIGN KEY (blocked_id) REFERENCES users(id),
+    UNIQUE(blocker_id, blocked_id)                    -- can only block someone once
+);
+
+-- ============================================================
 -- INDEXES: make searches faster
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_events_date      ON events(event_date);
@@ -152,3 +165,5 @@ CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_event    ON reviews(event_id);
 CREATE INDEX IF NOT EXISTS idx_consent_target   ON chat_consent(target_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_blocks_blocker   ON user_blocks(blocker_id);
+CREATE INDEX IF NOT EXISTS idx_blocks_blocked   ON user_blocks(blocked_id);

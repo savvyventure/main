@@ -3,12 +3,29 @@ const router = express.Router();
 const db = require('../db/database');
 const { requireAuth } = require('../middleware/auth');
 
+// Helper: check if user is blocked
+function isBlocked(blockerId, blockedId) {
+  const block = db.prepare(
+    'SELECT id FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?'
+  ).get(blockerId, blockedId);
+  return !!block;
+}
+
+// Helper: check if either user has blocked the other
+function hasBlockBetween(userId1, userId2) {
+  const block = db.prepare(`
+    SELECT id FROM user_blocks
+    WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)
+  `).get(userId1, userId2, userId2, userId1);
+  return !!block;
+}
+
 // ------- INBOX: list all conversations -------
 
 router.get('/', requireAuth, (req, res) => {
   const userId = req.session.user.id;
 
-  // Get all users this person has conversations with
+  // Get all users this person has conversations with (exclude blocked)
   const conversations = db.prepare(`
     SELECT
       u.id, u.username, u.avatar_url,
@@ -24,22 +41,45 @@ router.get('/', requireAuth, (req, res) => {
       ORDER BY created_at DESC LIMIT 1
     )
     WHERE u.id != ?
+      AND NOT EXISTS (SELECT 1 FROM user_blocks WHERE blocker_id = ? AND blocked_id = u.id)
     ORDER BY m.created_at DESC
-  `).all(userId, userId, userId, userId);
+  `).all(userId, userId, userId, userId, userId);
 
-  // Get pending chat requests
+  // Get pending chat requests (exclude from blocked users)
   const pendingRequests = db.prepare(`
     SELECT cc.*, u.username, u.avatar_url
     FROM chat_consent cc
     JOIN users u ON cc.requester_id = u.id
     WHERE cc.target_id = ? AND cc.status = 'pending'
+      AND NOT EXISTS (SELECT 1 FROM user_blocks WHERE blocker_id = ? AND blocked_id = u.id)
     ORDER BY cc.created_at DESC
+  `).all(userId, userId);
+
+  // Get sent requests (pending)
+  const sentRequests = db.prepare(`
+    SELECT cc.*, u.username, u.avatar_url
+    FROM chat_consent cc
+    JOIN users u ON cc.target_id = u.id
+    WHERE cc.requester_id = ? AND cc.status = 'pending'
+    ORDER BY cc.created_at DESC
+  `).all(userId);
+
+  // Get blocked users
+  const blockedUsers = db.prepare(`
+    SELECT ub.id AS block_id, u.id, u.username, u.avatar_url
+    FROM user_blocks ub
+    JOIN users u ON ub.blocked_id = u.id
+    WHERE ub.blocker_id = ?
+    ORDER BY ub.created_at DESC
   `).all(userId);
 
   res.render('pages/messages', {
     title: 'Messages - SyncUp',
     conversations,
     pendingRequests,
+    sentRequests,
+    blockedUsers,
+    query: req.query,
   });
 });
 
@@ -48,6 +88,11 @@ router.get('/', requireAuth, (req, res) => {
 router.get('/chat/:userId', requireAuth, (req, res) => {
   const currentUserId = req.session.user.id;
   const otherUserId = parseInt(req.params.userId);
+
+  // Check if either user has blocked the other
+  if (hasBlockBetween(currentUserId, otherUserId)) {
+    return res.redirect('/messages?error=Cannot chat with this user');
+  }
 
   // Verify chat consent exists
   const consent = db.prepare(`
@@ -100,6 +145,11 @@ router.post('/request/:userId', requireAuth, (req, res) => {
     return res.redirect('back');
   }
 
+  // Check if blocked
+  if (hasBlockBetween(requesterId, targetId)) {
+    return res.redirect('/messages?error=Cannot request chat with this user');
+  }
+
   // Check if consent already exists in either direction
   const existing = db.prepare(`
     SELECT * FROM chat_consent
@@ -111,7 +161,7 @@ router.post('/request/:userId', requireAuth, (req, res) => {
       .run(requesterId, targetId);
   }
 
-  res.redirect('/messages');
+  res.redirect('/messages?success=Chat request sent');
 });
 
 // ------- ACCEPT / DECLINE CHAT CONSENT -------
@@ -130,6 +180,51 @@ router.post('/consent/:id/decline', requireAuth, (req, res) => {
   ).run(req.params.id, req.session.user.id);
 
   res.redirect('/messages');
+});
+
+// ------- CANCEL SENT REQUEST -------
+
+router.post('/request/:id/cancel', requireAuth, (req, res) => {
+  db.prepare(
+    "DELETE FROM chat_consent WHERE id = ? AND requester_id = ? AND status = 'pending'"
+  ).run(req.params.id, req.session.user.id);
+
+  res.redirect('/messages');
+});
+
+// ------- BLOCK USER -------
+
+router.post('/block/:userId', requireAuth, (req, res) => {
+  const blockedId = parseInt(req.params.userId);
+  const blockerId = req.session.user.id;
+
+  if (blockedId === blockerId) {
+    return res.redirect('back');
+  }
+
+  // Check if already blocked
+  const existing = db.prepare(
+    'SELECT id FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?'
+  ).get(blockerId, blockedId);
+
+  if (!existing) {
+    db.prepare('INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (?, ?)')
+      .run(blockerId, blockedId);
+  }
+
+  res.redirect('/messages?success=User blocked');
+});
+
+// ------- UNBLOCK USER -------
+
+router.post('/unblock/:userId', requireAuth, (req, res) => {
+  const blockedId = parseInt(req.params.userId);
+  const blockerId = req.session.user.id;
+
+  db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?')
+    .run(blockerId, blockedId);
+
+  res.redirect('/messages?success=User unblocked');
 });
 
 module.exports = router;

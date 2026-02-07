@@ -226,6 +226,9 @@ img {
   background: var(--danger);
   color: #fff;
 }
+.btn-danger:hover {
+  background: #dc2626;
+}
 
 .btn-sm {
   padding: 0.35rem 0.75rem;
@@ -423,6 +426,16 @@ img {
   border-radius: 999px;
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+.badge-pending {
+  background: #fbbf24;
+  color: #1a1a2e;
+  border-color: #fbbf24;
+}
+.badge-info {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
 }
 
 .rating-badge {

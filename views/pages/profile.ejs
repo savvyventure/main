@@ -14,9 +14,33 @@
       <% if (currentUser && currentUser.username === profileUser.username) { %>
         <a href="/profile/<%= profileUser.username %>/edit" class="btn btn-outline">Edit Profile</a>
       <% } else if (currentUser) { %>
-        <form action="/messages/request/<%= profileUser.id %>" method="POST">
-          <button type="submit" class="btn btn-primary">Request to Chat</button>
-        </form>
+        <% if (hasBlockedYou) { %>
+          <span class="text-muted">This user is unavailable</span>
+        <% } else if (isBlocked) { %>
+          <form action="/messages/unblock/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-outline">Unblock User</button>
+          </form>
+        <% } else if (chatStatus === 'connected') { %>
+          <a href="/messages/chat/<%= profileUser.id %>" class="btn btn-primary">Send Message</a>
+          <form action="/messages/block/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this user? You will no longer be able to message each other.')">Block</button>
+          </form>
+        <% } else if (chatStatus === 'pending_sent') { %>
+          <span class="badge badge-pending">Chat Request Pending</span>
+          <form action="/messages/block/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this user?')">Block</button>
+          </form>
+        <% } else if (chatStatus === 'pending_received') { %>
+          <span class="badge badge-info">Wants to chat with you</span>
+          <a href="/messages" class="btn btn-primary btn-sm">View Request</a>
+        <% } else { %>
+          <form action="/messages/request/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-primary">Request to Chat</button>
+          </form>
+          <form action="/messages/block/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this user? They will not be able to contact you.')">Block</button>
+          </form>
+        <% } %>
       <% } %>
     </div>
   </div>

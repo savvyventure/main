@@ -4,6 +4,15 @@
 
 const db = require('../db/database');
 
+// Helper: check if either user has blocked the other
+function hasBlockBetween(userId1, userId2) {
+  const block = db.prepare(`
+    SELECT id FROM user_blocks
+    WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)
+  `).get(userId1, userId2, userId2, userId1);
+  return !!block;
+}
+
 module.exports = function (io) {
   io.on('connection', (socket) => {
     // When a user connects, they join a "room" named after their user ID.
@@ -15,6 +24,12 @@ module.exports = function (io) {
     // When a user sends a message
     socket.on('send_message', (data) => {
       const { senderId, receiverId, content } = data;
+
+      // Check if blocked
+      if (hasBlockBetween(senderId, receiverId)) {
+        socket.emit('error_message', { message: 'Cannot send message to this user.' });
+        return;
+      }
 
       // Verify chat consent exists and is accepted
       const consent = db.prepare(`

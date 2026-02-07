@@ -4,7 +4,14 @@
   <h1>Messages</h1>
 </div>
 
-<!-- Pending Chat Requests -->
+<% if (typeof query !== 'undefined' && query.success) { %>
+  <div class="alert alert-success"><%= query.success %></div>
+<% } %>
+<% if (typeof query !== 'undefined' && query.error) { %>
+  <div class="alert alert-error"><%= query.error %></div>
+<% } %>
+
+<!-- Pending Chat Requests (incoming) -->
 <% if (pendingRequests.length > 0) { %>
   <div class="detail-section">
     <h2>Chat Requests</h2>
@@ -21,6 +28,28 @@
             </form>
             <form action="/messages/consent/<%= req.id %>/decline" method="POST" class="inline-form">
               <button type="submit" class="btn btn-outline btn-sm">Decline</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Sent Chat Requests (outgoing) -->
+<% if (sentRequests.length > 0) { %>
+  <div class="detail-section">
+    <h2>Sent Requests</h2>
+    <div class="requests-list">
+      <% sentRequests.forEach(req => { %>
+        <div class="request-card">
+          <div class="request-info">
+            <span class="badge badge-pending">Pending</span>
+            Waiting for <a href="/profile/<%= req.username %>"><%= req.username %></a> to accept
+          </div>
+          <div class="request-actions">
+            <form action="/messages/request/<%= req.id %>/cancel" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-outline btn-sm">Cancel</button>
             </form>
           </div>
         </div>
@@ -57,5 +86,28 @@
     </div>
   <% } %>
 </div>
+
+<!-- Blocked Users -->
+<% if (blockedUsers.length > 0) { %>
+  <div class="detail-section">
+    <details class="blocked-section">
+      <summary>Blocked Users (<%= blockedUsers.length %>)</summary>
+      <div class="requests-list" style="margin-top: 1rem;">
+        <% blockedUsers.forEach(user => { %>
+          <div class="request-card">
+            <div class="request-info">
+              <a href="/profile/<%= user.username %>"><%= user.username %></a>
+            </div>
+            <div class="request-actions">
+              <form action="/messages/unblock/<%= user.id %>" method="POST" class="inline-form">
+                <button type="submit" class="btn btn-outline btn-sm">Unblock</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </details>
+  </div>
+<% } %>
 
 <%- include('../partials/footer') %>
