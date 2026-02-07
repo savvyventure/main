@@ -15,6 +15,11 @@ const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 
+// Environment configuration
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'syncup-dev-secret-change-in-production';
+const SESSIONS_PATH = process.env.SESSIONS_PATH || path.join(__dirname, '..', 'data');
+
 // Initialize the database (creates tables if they don't exist)
 const db = require('./db/database');
 const fs = require('fs');
@@ -25,6 +30,11 @@ db.exec(schema);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// Trust proxy for production (needed for secure cookies behind reverse proxy)
+if (NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // ------- CONFIGURATION -------
 
@@ -43,15 +53,16 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(session({
   store: new SQLiteStore({
     db: 'sessions.db',
-    dir: path.join(__dirname, '..', 'data'),
+    dir: SESSIONS_PATH,
   }),
-  secret: 'syncup-secret-change-in-production',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 days
     httpOnly: true,                     // prevents JavaScript access to cookie
     sameSite: 'lax',                    // CSRF protection
+    secure: NODE_ENV === 'production', // HTTPS only in production
   },
 }));
 
