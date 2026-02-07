@@ -1,0 +1,107 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>Analytics Dashboard</h1>
+  <p class="text-muted">Overview of your platform's performance</p>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-bar" style="margin-bottom: 2rem;">
+  <div class="stat">
+    <span class="stat-number"><%= stats.todayViews %></span>
+    <span class="stat-label">Views Today</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number"><%= stats.weekViews %></span>
+    <span class="stat-label">Views This Week</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number"><%= stats.totalUsers %></span>
+    <span class="stat-label">Total Users</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number"><%= stats.totalEvents %></span>
+    <span class="stat-label">Total Events</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number"><%= stats.totalReviews %></span>
+    <span class="stat-label">Total Reviews</span>
+  </div>
+</div>
+
+<div class="analytics-grid">
+  <!-- Popular Pages -->
+  <div class="detail-section">
+    <h2>Popular Pages (Last 7 Days)</h2>
+    <% if (popularPages.length === 0) { %>
+      <p class="text-muted">No page views recorded yet.</p>
+    <% } else { %>
+      <div class="analytics-list">
+        <% popularPages.forEach((page, index) => { %>
+          <div class="analytics-item">
+            <span class="analytics-rank"><%= index + 1 %></span>
+            <span class="analytics-name"><%= page.path %></span>
+            <span class="analytics-value"><%= page.views %> views</span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Popular Events -->
+  <div class="detail-section">
+    <h2>Popular Events</h2>
+    <% if (popularEvents.length === 0) { %>
+      <p class="text-muted">No events yet.</p>
+    <% } else { %>
+      <div class="analytics-list">
+        <% popularEvents.forEach((event, index) => { %>
+          <div class="analytics-item">
+            <span class="analytics-rank"><%= index + 1 %></span>
+            <a href="/events/<%= event.id %>" class="analytics-name"><%= event.title %></a>
+            <span class="analytics-value"><%= event.views %> views</span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Recent Signups -->
+  <div class="detail-section">
+    <h2>Recent Signups</h2>
+    <% if (recentSignups.length === 0) { %>
+      <p class="text-muted">No users yet.</p>
+    <% } else { %>
+      <div class="analytics-list">
+        <% recentSignups.forEach(user => { %>
+          <div class="analytics-item">
+            <a href="/profile/<%= user.username %>" class="analytics-name"><%= user.username %></a>
+            <span class="analytics-value"><%= new Date(user.created_at).toLocaleDateString() %></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Views by Day -->
+  <div class="detail-section">
+    <h2>Views by Day</h2>
+    <% if (viewsByDay.length === 0) { %>
+      <p class="text-muted">No data yet.</p>
+    <% } else { %>
+      <div class="chart-container">
+        <% const maxViews = Math.max(...viewsByDay.map(d => d.views), 1); %>
+        <% viewsByDay.forEach(day => { %>
+          <div class="chart-bar-container">
+            <div class="chart-bar" style="height: <%= (day.views / maxViews) * 100 %>%;">
+              <span class="chart-value"><%= day.views %></span>
+            </div>
+            <span class="chart-label"><%= new Date(day.day).toLocaleDateString('en-US', { weekday: 'short' }) %></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -68,6 +68,28 @@ app.use((req, res, next) => {
   next();
 });
 
+// Page view tracking (skip static assets and API routes)
+app.use((req, res, next) => {
+  // Only track GET requests for actual pages
+  if (req.method === 'GET' && !req.path.match(/\.(css|js|png|jpg|ico|svg|woff|woff2)$/)) {
+    try {
+      db.prepare(`
+        INSERT INTO page_views (path, user_id, session_id, referrer, user_agent)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(
+        req.path,
+        req.session.user ? req.session.user.id : null,
+        req.sessionID || null,
+        req.get('Referer') || '',
+        (req.get('User-Agent') || '').substring(0, 500)
+      );
+    } catch (err) {
+      // Silently fail - don't break the app if analytics fails
+    }
+  }
+  next();
+});
+
 // ------- ROUTES -------
 
 const indexRoutes = require('./routes/index');
@@ -78,6 +100,7 @@ const messageRoutes = require('./routes/messages');
 const reviewRoutes = require('./routes/reviews');
 const profileRoutes = require('./routes/profile');
 const notificationRoutes = require('./routes/notifications');
+const analyticsRoutes = require('./routes/analytics');
 
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
@@ -87,6 +110,7 @@ app.use('/messages', messageRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/profile', profileRoutes);
 app.use('/notifications', notificationRoutes);
+app.use('/analytics', analyticsRoutes);
 
 // ------- SOCKET.IO (real-time messaging) -------
 

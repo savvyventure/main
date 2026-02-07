@@ -165,6 +165,20 @@ CREATE TABLE IF NOT EXISTS review_votes (
 );
 
 -- ============================================================
+-- PAGE VIEWS: basic analytics tracking
+-- ============================================================
+CREATE TABLE IF NOT EXISTS page_views (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    path          TEXT    NOT NULL,                    -- URL path visited
+    user_id       INTEGER,                             -- logged-in user (optional)
+    session_id    TEXT,                                -- session identifier
+    referrer      TEXT    DEFAULT '',                  -- where they came from
+    user_agent    TEXT    DEFAULT '',                  -- browser info
+    created_at    TEXT    DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- ============================================================
 -- INDEXES: make searches faster
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_events_date      ON events(event_date);
@@ -182,3 +196,5 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocker   ON user_blocks(blocker_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocked   ON user_blocks(blocked_id);
 CREATE INDEX IF NOT EXISTS idx_review_votes     ON review_votes(review_id);
+CREATE INDEX IF NOT EXISTS idx_page_views_path  ON page_views(path);
+CREATE INDEX IF NOT EXISTS idx_page_views_date  ON page_views(created_at);

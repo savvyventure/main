@@ -1206,9 +1206,15 @@ img {
 
   .stats-bar {
     gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .stat-number {
     font-size: 1.5rem;
+  }
+
+  .events-grid {
+    grid-template-columns: 1fr;
   }
 
   .event-detail-grid {
@@ -1233,6 +1239,11 @@ img {
 
   .profile-header {
     flex-direction: column;
+  }
+  .profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .chat-bubble {
@@ -1264,4 +1275,242 @@ img {
   .notification-card {
     flex-wrap: wrap;
   }
+
+  .review-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .review-votes {
+    flex-wrap: wrap;
+  }
+
+  .request-card {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .request-actions {
+    width: 100%;
+  }
+  .request-actions .btn {
+    flex: 1;
+  }
+
+  .table-card {
+    padding: 0.75rem;
+  }
+
+  .conversation-card {
+    padding: 0.75rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .btn-lg {
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* --- Loading States --- */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn.loading {
+  color: transparent;
+}
+
+/* --- Toast Notifications --- */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+  max-width: 350px;
+}
+
+.toast-success {
+  border-left: 4px solid var(--success);
+}
+
+.toast-error {
+  border-left: 4px solid var(--danger);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* --- Empty States --- */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+/* --- Skeleton Loading --- */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-input) 25%, var(--bg-card) 50%, var(--bg-input) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+  height: 1.5rem;
+  width: 60%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-card {
+  height: 200px;
+  border-radius: var(--radius);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* --- Analytics --- */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.analytics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.analytics-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-input);
+  border-radius: 8px;
+}
+
+.analytics-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.analytics-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-value {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 150px;
+  padding: 1rem 0;
+  gap: 0.5rem;
+}
+
+.chart-bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 40px;
+  background: linear-gradient(to top, var(--primary), var(--primary-light));
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 20px;
+}
+
+.chart-value {
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding-top: 4px;
+}
+
+.chart-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
 }
