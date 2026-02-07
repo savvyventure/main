@@ -124,6 +124,20 @@ CREATE TABLE IF NOT EXISTS reviews (
 );
 
 -- ============================================================
+-- NOTIFICATIONS: alerts for bookings, cancellations, etc.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notifications (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL,                    -- who receives this notification
+    type          TEXT    NOT NULL,                     -- booking_received, booking_cancelled, table_cancelled
+    message       TEXT    NOT NULL,                     -- human-readable message
+    link          TEXT    DEFAULT '',                   -- URL to navigate to when clicked
+    is_read       INTEGER DEFAULT 0,                   -- 0 = unread, 1 = read
+    created_at    TEXT    DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- ============================================================
 -- INDEXES: make searches faster
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_events_date      ON events(event_date);
@@ -137,3 +151,4 @@ CREATE INDEX IF NOT EXISTS idx_messages_sender  ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_event    ON reviews(event_id);
 CREATE INDEX IF NOT EXISTS idx_consent_target   ON chat_consent(target_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);

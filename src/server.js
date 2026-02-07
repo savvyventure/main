@@ -55,9 +55,16 @@ app.use(session({
   },
 }));
 
-// Make the logged-in user available to all templates
+// Make the logged-in user and notification count available to all templates
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
+  res.locals.notificationCount = 0;
+  if (req.session.user) {
+    const row = db.prepare(
+      'SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0'
+    ).get(req.session.user.id);
+    res.locals.notificationCount = row.c;
+  }
   next();
 });
 
@@ -70,6 +77,7 @@ const tableRoutes = require('./routes/tables');
 const messageRoutes = require('./routes/messages');
 const reviewRoutes = require('./routes/reviews');
 const profileRoutes = require('./routes/profile');
+const notificationRoutes = require('./routes/notifications');
 
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
@@ -78,6 +86,7 @@ app.use('/tables', tableRoutes);
 app.use('/messages', messageRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/profile', profileRoutes);
+app.use('/notifications', notificationRoutes);
 
 // ------- SOCKET.IO (real-time messaging) -------
 

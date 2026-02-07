@@ -17,7 +17,17 @@
         <a href="/events">Events</a>
         <% if (currentUser) { %>
           <a href="/events/new/create">Create Event</a>
+          <div class="nav-dropdown">
+            <a href="#" class="nav-dropdown-toggle" onclick="event.preventDefault(); this.parentElement.classList.toggle('open')">VIP Tables</a>
+            <div class="nav-dropdown-menu">
+              <a href="/tables/my-tables">My Tables</a>
+              <a href="/tables/my-bookings">My Bookings</a>
+            </div>
+          </div>
           <a href="/messages">Messages</a>
+          <a href="/notifications" class="nav-notif-link">
+            Alerts<% if (notificationCount > 0) { %><span class="nav-notif-badge"><%= notificationCount %></span><% } %>
+          </a>
           <a href="/profile/<%= currentUser.username %>">Profile</a>
           <form action="/auth/logout" method="POST" class="nav-logout-form">
             <button type="submit" class="btn btn-outline btn-sm">Log Out</button>

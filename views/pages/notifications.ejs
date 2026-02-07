@@ -1,0 +1,38 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>Notifications</h1>
+</div>
+
+<% if (notifications.length === 0) { %>
+  <div class="empty-state">
+    <p>No notifications yet. You'll be alerted when someone books your VIP table!</p>
+  </div>
+<% } else { %>
+  <div class="notifications-list">
+    <% notifications.forEach(n => { %>
+      <div class="notification-card <%= n.is_read ? '' : 'notification-unread' %>">
+        <div class="notification-icon">
+          <% if (n.type === 'booking_received') { %>
+            &#9989;
+          <% } else if (n.type === 'booking_cancelled') { %>
+            &#10060;
+          <% } else if (n.type === 'table_cancelled') { %>
+            &#9888;
+          <% } else { %>
+            &#128276;
+          <% } %>
+        </div>
+        <div class="notification-content">
+          <p><%= n.message %></p>
+          <span class="notification-time"><%= new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></span>
+        </div>
+        <% if (n.link) { %>
+          <a href="<%= n.link %>" class="btn btn-outline btn-sm">View</a>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('../partials/footer') %>
