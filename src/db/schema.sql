@@ -151,6 +151,20 @@ CREATE TABLE IF NOT EXISTS user_blocks (
 );
 
 -- ============================================================
+-- REVIEW VOTES: helpful/not helpful votes on reviews
+-- ============================================================
+CREATE TABLE IF NOT EXISTS review_votes (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    review_id     INTEGER NOT NULL,                    -- which review
+    user_id       INTEGER NOT NULL,                    -- who voted
+    vote          INTEGER NOT NULL CHECK(vote IN (-1, 1)),  -- 1 = helpful, -1 = not helpful
+    created_at    TEXT    DEFAULT (datetime('now')),
+    FOREIGN KEY (review_id) REFERENCES reviews(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)   REFERENCES users(id),
+    UNIQUE(review_id, user_id)                        -- one vote per user per review
+);
+
+-- ============================================================
 -- INDEXES: make searches faster
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_events_date      ON events(event_date);
@@ -167,3 +181,4 @@ CREATE INDEX IF NOT EXISTS idx_consent_target   ON chat_consent(target_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocker   ON user_blocks(blocker_id);
 CREATE INDEX IF NOT EXISTS idx_blocks_blocked   ON user_blocks(blocked_id);
+CREATE INDEX IF NOT EXISTS idx_review_votes     ON review_votes(review_id);

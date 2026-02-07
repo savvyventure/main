@@ -85,14 +85,26 @@ router.get('/:id', (req, res) => {
     ORDER BY vt.price_per_seat ASC
   `).all(req.params.id);
 
-  // Get reviews for this event
+  // Get reviews for this event with vote counts
   const reviews = db.prepare(`
-    SELECT r.*, u.username, u.avatar_url
+    SELECT r.*, u.username, u.avatar_url,
+      (SELECT COUNT(*) FROM review_votes WHERE review_id = r.id AND vote = 1) AS helpful_count,
+      (SELECT COUNT(*) FROM review_votes WHERE review_id = r.id AND vote = -1) AS not_helpful_count
     FROM reviews r
     JOIN users u ON r.user_id = u.id
     WHERE r.event_id = ?
     ORDER BY r.created_at DESC
   `).all(req.params.id);
+
+  // Get current user's votes on these reviews
+  let userVotes = {};
+  if (req.session.user) {
+    const votes = db.prepare(`
+      SELECT review_id, vote FROM review_votes
+      WHERE user_id = ? AND review_id IN (SELECT id FROM reviews WHERE event_id = ?)
+    `).all(req.session.user.id, req.params.id);
+    votes.forEach(v => { userVotes[v.review_id] = v.vote; });
+  }
 
   const avgRating = db.prepare(
     'SELECT ROUND(AVG(rating), 1) AS avg FROM reviews WHERE event_id = ?'
@@ -104,6 +116,8 @@ router.get('/:id', (req, res) => {
     tables,
     reviews,
     avgRating,
+    userVotes,
+    query: req.query,
   });
 });
 

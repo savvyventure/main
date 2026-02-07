@@ -1,0 +1,39 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>Edit Review</h1>
+  <p class="text-muted">for <%= review.event_title %></p>
+</div>
+
+<% if (typeof query !== 'undefined' && query.error) { %>
+  <div class="alert alert-error"><%= query.error %></div>
+<% } %>
+
+<form action="/reviews/<%= review.id %>/edit" method="POST" class="form review-form">
+  <div class="form-group">
+    <label>Rating</label>
+    <div class="star-rating">
+      <% for (let i = 5; i >= 1; i--) { %>
+        <input type="radio" id="star<%= i %>" name="rating" value="<%= i %>" <%= review.rating === i ? 'checked' : '' %> required>
+        <label for="star<%= i %>">&#9733;</label>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="review-title">Title (optional)</label>
+    <input type="text" id="review-title" name="title" value="<%= review.title || '' %>" placeholder="Summarize your experience">
+  </div>
+
+  <div class="form-group">
+    <label for="review-content">Your Review</label>
+    <textarea id="review-content" name="content" rows="5" required placeholder="What did you think of this event?"><%= review.content %></textarea>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Update Review</button>
+    <a href="/events/<%= review.event_id %>" class="btn btn-outline">Cancel</a>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

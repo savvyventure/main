@@ -1,5 +1,12 @@
 <%- include('../partials/header') %>
 
+<% if (typeof query !== 'undefined' && query.success) { %>
+  <div class="alert alert-success"><%= query.success %></div>
+<% } %>
+<% if (typeof query !== 'undefined' && query.error) { %>
+  <div class="alert alert-error"><%= query.error %></div>
+<% } %>
+
 <div class="event-detail">
   <div class="event-detail-header">
     <div>
@@ -118,12 +125,45 @@
                 </div>
                 <% if (review.title) { %><h4><%= review.title %></h4><% } %>
                 <p><%= review.content %></p>
-                <% if (currentUser && currentUser.id === review.user_id) { %>
-                  <form action="/reviews/<%= review.id %>/delete" method="POST" class="inline-form">
-                    <button type="submit" class="btn btn-danger btn-sm"
-                            onclick="return confirm('Delete this review?')">Delete</button>
-                  </form>
-                <% } %>
+
+                <div class="review-footer">
+                  <!-- Helpful/Not Helpful Voting -->
+                  <% if (currentUser && currentUser.id !== review.user_id) { %>
+                    <div class="review-votes">
+                      <form action="/reviews/<%= review.id %>/vote" method="POST" class="inline-form">
+                        <input type="hidden" name="vote" value="1">
+                        <button type="submit" class="vote-btn <%= userVotes[review.id] === 1 ? 'voted' : '' %>">
+                          <span class="vote-icon">&#x1F44D;</span>
+                          Helpful <% if (review.helpful_count > 0) { %>(<%= review.helpful_count %>)<% } %>
+                        </button>
+                      </form>
+                      <form action="/reviews/<%= review.id %>/vote" method="POST" class="inline-form">
+                        <input type="hidden" name="vote" value="-1">
+                        <button type="submit" class="vote-btn <%= userVotes[review.id] === -1 ? 'voted' : '' %>">
+                          <span class="vote-icon">&#x1F44E;</span>
+                          Not Helpful <% if (review.not_helpful_count > 0) { %>(<%= review.not_helpful_count %>)<% } %>
+                        </button>
+                      </form>
+                    </div>
+                  <% } else if (!currentUser) { %>
+                    <div class="review-votes text-muted">
+                      <% if (review.helpful_count > 0 || review.not_helpful_count > 0) { %>
+                        <span><%= review.helpful_count %> found helpful</span>
+                      <% } %>
+                    </div>
+                  <% } %>
+
+                  <!-- Edit/Delete for own reviews -->
+                  <% if (currentUser && currentUser.id === review.user_id) { %>
+                    <div class="review-actions">
+                      <a href="/reviews/<%= review.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                      <form action="/reviews/<%= review.id %>/delete" method="POST" class="inline-form">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Delete this review?')">Delete</button>
+                      </form>
+                    </div>
+                  <% } %>
+                </div>
               </div>
             <% }) %>
           </div>

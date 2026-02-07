@@ -735,6 +735,55 @@ img {
 .star-filled { color: var(--accent); }
 .star-empty  { color: var(--border); }
 
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.review-votes {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.vote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.vote-btn:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+.vote-btn.voted {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.vote-icon {
+  font-size: 1rem;
+}
+
+.review-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .inline-form { display: inline; }
 
 /* --- Profile --- */
