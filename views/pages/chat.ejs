@@ -1,0 +1,87 @@
+<%- include('../partials/header') %>
+
+<div class="chat-page">
+  <div class="chat-header">
+    <a href="/messages" class="btn btn-outline btn-sm">&larr; Back</a>
+    <h2>Chat with <a href="/profile/<%= otherUser.username %>"><%= otherUser.username %></a></h2>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <% messages.forEach(msg => { %>
+      <div class="chat-bubble <%= msg.sender_id === currentUser.id ? 'sent' : 'received' %>">
+        <p><%= msg.content %></p>
+        <span class="chat-time"><%= new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></span>
+      </div>
+    <% }) %>
+  </div>
+
+  <form class="chat-input" id="chatForm">
+    <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" required>
+    <button type="submit" class="btn btn-primary">Send</button>
+  </form>
+</div>
+
+<!-- Socket.io for real-time messaging -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const currentUserId = <%= currentUser.id %>;
+  const otherUserId = <%= otherUser.id %>;
+
+  // Join the user's personal room
+  socket.emit('join', currentUserId);
+
+  // Mark messages as read
+  socket.emit('mark_read', { userId: currentUserId, otherUserId: otherUserId });
+
+  // Handle form submission
+  document.getElementById('chatForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    socket.emit('send_message', {
+      senderId: currentUserId,
+      receiverId: otherUserId,
+      content: content
+    });
+
+    input.value = '';
+  });
+
+  // Handle incoming messages
+  socket.on('new_message', (msg) => {
+    // Only show messages relevant to this conversation
+    if ((msg.sender_id === currentUserId && msg.receiver_id === otherUserId) ||
+        (msg.sender_id === otherUserId && msg.receiver_id === currentUserId)) {
+      const messagesDiv = document.getElementById('chatMessages');
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + (msg.sender_id === currentUserId ? 'sent' : 'received');
+
+      const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      bubble.innerHTML = '<p>' + escapeHtml(msg.content) + '</p><span class="chat-time">' + time + '</span>';
+
+      messagesDiv.appendChild(bubble);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      // Mark as read if it's from the other user
+      if (msg.sender_id === otherUserId) {
+        socket.emit('mark_read', { userId: currentUserId, otherUserId: otherUserId });
+      }
+    }
+  });
+
+  // Scroll to the bottom on load
+  const messagesDiv = document.getElementById('chatMessages');
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  // Simple HTML escaping to prevent XSS
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
+
+<%- include('../partials/footer') %>

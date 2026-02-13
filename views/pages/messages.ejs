@@ -1,0 +1,113 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>Messages</h1>
+</div>
+
+<% if (typeof query !== 'undefined' && query.success) { %>
+  <div class="alert alert-success"><%= query.success %></div>
+<% } %>
+<% if (typeof query !== 'undefined' && query.error) { %>
+  <div class="alert alert-error"><%= query.error %></div>
+<% } %>
+
+<!-- Pending Chat Requests (incoming) -->
+<% if (pendingRequests.length > 0) { %>
+  <div class="detail-section">
+    <h2>Chat Requests</h2>
+    <div class="requests-list">
+      <% pendingRequests.forEach(req => { %>
+        <div class="request-card">
+          <div class="request-info">
+            <a href="/profile/<%= req.username %>"><%= req.username %></a>
+            wants to chat with you
+          </div>
+          <div class="request-actions">
+            <form action="/messages/consent/<%= req.id %>/accept" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-primary btn-sm">Accept</button>
+            </form>
+            <form action="/messages/consent/<%= req.id %>/decline" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-outline btn-sm">Decline</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Sent Chat Requests (outgoing) -->
+<% if (sentRequests.length > 0) { %>
+  <div class="detail-section">
+    <h2>Sent Requests</h2>
+    <div class="requests-list">
+      <% sentRequests.forEach(req => { %>
+        <div class="request-card">
+          <div class="request-info">
+            <span class="badge badge-pending">Pending</span>
+            Waiting for <a href="/profile/<%= req.username %>"><%= req.username %></a> to accept
+          </div>
+          <div class="request-actions">
+            <form action="/messages/request/<%= req.id %>/cancel" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-outline btn-sm">Cancel</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Conversations -->
+<div class="detail-section">
+  <h2>Conversations</h2>
+  <% if (conversations.length === 0) { %>
+    <div class="empty-state">
+      <p>No conversations yet. Request to chat with someone from their profile page!</p>
+    </div>
+  <% } else { %>
+    <div class="conversations-list">
+      <% conversations.forEach(conv => { %>
+        <a href="/messages/chat/<%= conv.id %>" class="conversation-card">
+          <div class="conversation-info">
+            <strong><%= conv.username %></strong>
+            <p class="conversation-preview"><%= conv.last_message %></p>
+          </div>
+          <div class="conversation-meta">
+            <span class="conversation-time">
+              <%= new Date(conv.last_message_at).toLocaleDateString() %>
+            </span>
+            <% if (conv.unread_count > 0) { %>
+              <span class="unread-badge"><%= conv.unread_count %></span>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<!-- Blocked Users -->
+<% if (blockedUsers.length > 0) { %>
+  <div class="detail-section">
+    <details class="blocked-section">
+      <summary>Blocked Users (<%= blockedUsers.length %>)</summary>
+      <div class="requests-list" style="margin-top: 1rem;">
+        <% blockedUsers.forEach(user => { %>
+          <div class="request-card">
+            <div class="request-info">
+              <a href="/profile/<%= user.username %>"><%= user.username %></a>
+            </div>
+            <div class="request-actions">
+              <form action="/messages/unblock/<%= user.id %>" method="POST" class="inline-form">
+                <button type="submit" class="btn btn-outline btn-sm">Unblock</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </details>
+  </div>
+<% } %>
+
+<%- include('../partials/footer') %>

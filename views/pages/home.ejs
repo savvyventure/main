@@ -1,0 +1,94 @@
+<%- include('../partials/header') %>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>Find Your Vibe</h1>
+    <p>Discover events, share VIP tables, and connect with fellow party enthusiasts.</p>
+    <div class="hero-actions">
+      <a href="/events" class="btn btn-primary btn-lg">Browse Events</a>
+      <% if (!currentUser) { %>
+        <a href="/auth/signup" class="btn btn-outline btn-lg">Join SyncUp</a>
+      <% } else { %>
+        <a href="/events/new/create" class="btn btn-outline btn-lg">Create Event</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-bar">
+  <div class="stat">
+    <span class="stat-number"><%= stats.eventCount %></span>
+    <span class="stat-label">Events</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number"><%= stats.userCount %></span>
+    <span class="stat-label">Members</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number"><%= stats.tableCount %></span>
+    <span class="stat-label">VIP Tables</span>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="section">
+  <h2 class="section-title">How It Works</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#127880;</div>
+      <h3>Discover Events</h3>
+      <p>Browse parties, club nights, concerts, and more in your area. Filter by genre, venue, or date.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#127870;</div>
+      <h3>Share VIP Tables</h3>
+      <p>Got spare seats at your VIP table? List them and share the experience with fellow enthusiasts.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128172;</div>
+      <h3>Connect & Chat</h3>
+      <p>Message other users (with mutual consent) to coordinate plans and meet new people.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#11088;</div>
+      <h3>Rate & Review</h3>
+      <p>Share your experiences. Help others find the best events and artists.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Upcoming Events -->
+<% if (events.length > 0) { %>
+<section class="section">
+  <h2 class="section-title">Upcoming Events</h2>
+  <div class="events-grid">
+    <% events.forEach(event => { %>
+      <a href="/events/<%= event.id %>" class="event-card">
+        <div class="event-card-header">
+          <span class="event-date"><%= new Date(event.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) %></span>
+          <% if (event.price > 0) { %>
+            <span class="event-price"><%= event.currency %> <%= event.price.toFixed(2) %></span>
+          <% } else { %>
+            <span class="event-price free">FREE</span>
+          <% } %>
+        </div>
+        <h3 class="event-card-title"><%= event.title %></h3>
+        <p class="event-card-venue"><%= event.venue %></p>
+        <% if (event.dj_artist) { %>
+          <p class="event-card-artist"><%= event.dj_artist %></p>
+        <% } %>
+        <% if (event.genre) { %>
+          <span class="badge"><%= event.genre %></span>
+        <% } %>
+      </a>
+    <% }) %>
+  </div>
+  <div class="section-footer">
+    <a href="/events" class="btn btn-outline">View All Events</a>
+  </div>
+</section>
+<% } %>
+
+<%- include('../partials/footer') %>

@@ -5,60 +5,93 @@
 ## Repository Overview
 
 - **Name**: savvyventure/main
-- **Status**: Newly initialized repository (no application code yet)
-- **Primary branch**: `main` (or default branch once established)
+- **Project**: SyncUp - Social platform for party and event enthusiasts
+- **Primary branch**: `main`
 
 ## Project Setup
 
-This repository is currently empty. When the project is initialized, update this section with:
-
-- Language/runtime requirements and versions
-- Package manager and dependency installation commands
-- Environment variables and configuration files needed
-- Database or service dependencies
-
-## Common Commands
-
-<!-- Update these as the project develops -->
+- **Runtime**: Node.js (v18+)
+- **Package manager**: npm
+- **Database**: SQLite (via better-sqlite3), stored in `data/syncup.db`
+- **Template engine**: EJS
+- **Session store**: SQLite (via connect-sqlite3), stored in `data/sessions.db`
 
 ```bash
 # Install dependencies
-# (e.g., npm install, pip install -r requirements.txt, cargo build)
+npm install
 
-# Run the application
-# (e.g., npm start, python main.py, cargo run)
+# Initialize the database (creates tables)
+npm run db:init
 
-# Run tests
-# (e.g., npm test, pytest, cargo test)
+# Run in development mode (auto-restart on file changes)
+npm run dev
 
-# Run linter / formatter
-# (e.g., npm run lint, ruff check ., cargo clippy)
+# Run in production mode
+npm start
+```
 
-# Build for production
-# (e.g., npm run build, cargo build --release)
+The app runs on `http://localhost:3000` by default (configurable via `PORT` env var).
+
+## Common Commands
+
+```bash
+npm install          # Install dependencies
+npm run dev          # Development server with auto-reload
+npm start            # Production server
+npm run db:init      # Initialize/reset database tables
 ```
 
 ## Architecture
 
-<!-- Describe the high-level architecture once the project takes shape -->
+```
+src/
+  server.js          # Entry point - Express app setup, middleware, Socket.io
+  db/
+    database.js      # SQLite connection (shared singleton)
+    schema.sql       # All table definitions
+    init.js          # Database initialization script
+  routes/
+    index.js         # Home page
+    auth.js          # Signup, login, logout
+    events.js        # Event CRUD, search, filtering
+    tables.js        # VIP table listings and bookings
+    messages.js      # Chat consent, inbox, conversations
+    reviews.js       # Event reviews and ratings
+    profile.js       # User profiles
+  middleware/
+    auth.js          # requireAuth, redirectIfAuth middleware
+  utils/
+    socket.js        # Socket.io real-time messaging handler
+views/
+  partials/          # Shared header/footer EJS templates
+  pages/             # Page-level EJS templates
+public/
+  css/style.css      # All styles
+  js/                # Client-side JavaScript (if needed)
+  images/            # Static images
+data/                # SQLite database files (gitignored)
+```
 
-- Directory structure and module organization
-- Key design patterns in use
-- Data flow and state management approach
-- External service integrations
+- **Pattern**: Server-side rendered MVC (Model-View-Controller)
+- **Auth**: Session-based with bcrypt password hashing
+- **Real-time**: Socket.io for private messaging
+- **Database**: Synchronous better-sqlite3 queries
 
 ## Code Conventions
 
 - Follow the existing style and patterns established in the codebase
-- Match the formatting enforced by any configured linter/formatter
-- Write clear, descriptive commit messages
-- Keep changes focused and minimal; avoid unrelated modifications in the same commit
+- Use `require()` (CommonJS modules) — no ES module imports
+- SQL queries use prepared statements to prevent injection
+- Form validation via express-validator
+- Keep changes focused and minimal; avoid unrelated modifications
 
 ## Testing
 
-- Run the full test suite before committing changes
-- Add tests for new functionality
-- Ensure existing tests pass after modifications
+- Run `npm start` and verify the app loads at `http://localhost:3000`
+- Test authentication flows (signup, login, logout)
+- Test event creation, editing, and search
+- Test VIP table booking workflow
+- Test chat consent and messaging
 
 ## Git Workflow
 
@@ -72,5 +105,5 @@ This repository is currently empty. When the project is initialized, update this
 - **Minimal changes**: Only change what is necessary to accomplish the task
 - **No over-engineering**: Avoid adding abstractions, utilities, or features beyond what is requested
 - **Security**: Do not commit secrets, credentials, or `.env` files
-- **Verify**: Run tests, linters, and builds after making changes to confirm nothing is broken
+- **Verify**: Run the app after making changes to confirm nothing is broken
 - **Update this file**: When significant project structure or tooling changes are made, update this CLAUDE.md accordingly

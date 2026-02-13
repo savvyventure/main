@@ -1,0 +1,240 @@
+<%- include('../partials/header') %>
+
+<% if (typeof query !== 'undefined' && query.success) { %>
+  <div class="alert alert-success"><%= query.success %></div>
+<% } %>
+<% if (typeof query !== 'undefined' && query.error) { %>
+  <div class="alert alert-error"><%= query.error %></div>
+<% } %>
+
+<div class="event-detail">
+  <div class="event-detail-header">
+    <div>
+      <h1><%= event.title %></h1>
+      <p class="event-meta">
+        Posted by <a href="/profile/<%= event.creator_name %>"><%= event.creator_name %></a>
+      </p>
+    </div>
+    <% if (currentUser && currentUser.id === event.creator_user_id) { %>
+      <a href="/events/<%= event.id %>/edit" class="btn btn-outline">Edit Event</a>
+    <% } %>
+  </div>
+
+  <div class="event-detail-grid">
+    <!-- Main Info -->
+    <div class="event-detail-main">
+      <div class="detail-section">
+        <h2>Details</h2>
+        <div class="detail-list">
+          <div class="detail-item">
+            <strong>Date</strong>
+            <span><%= new Date(event.event_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></span>
+          </div>
+          <% if (event.event_end) { %>
+          <div class="detail-item">
+            <strong>Ends</strong>
+            <span><%= new Date(event.event_end).toLocaleString() %></span>
+          </div>
+          <% } %>
+          <div class="detail-item">
+            <strong>Venue</strong>
+            <span><%= event.venue %></span>
+          </div>
+          <% if (event.address) { %>
+          <div class="detail-item">
+            <strong>Address</strong>
+            <span><%= event.address %></span>
+          </div>
+          <% } %>
+          <% if (event.dj_artist) { %>
+          <div class="detail-item">
+            <strong>Artist / DJ</strong>
+            <span><%= event.dj_artist %></span>
+          </div>
+          <% } %>
+          <% if (event.genre) { %>
+          <div class="detail-item">
+            <strong>Genre</strong>
+            <span class="badge"><%= event.genre %></span>
+          </div>
+          <% } %>
+          <div class="detail-item">
+            <strong>Price</strong>
+            <span><%= event.price > 0 ? event.currency + ' ' + event.price.toFixed(2) : 'FREE' %></span>
+          </div>
+          <% if (event.capacity > 0) { %>
+          <div class="detail-item">
+            <strong>Capacity</strong>
+            <span><%= event.capacity %> people</span>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h2>About This Event</h2>
+        <p class="event-description"><%= event.description %></p>
+      </div>
+
+      <!-- Reviews -->
+      <div class="detail-section">
+        <h2>Reviews <% if (avgRating) { %><span class="rating-badge"><%= avgRating %> / 5</span><% } %></h2>
+
+        <% if (currentUser && currentUser.id !== event.creator_user_id) { %>
+          <% const userReview = reviews.find(r => r.user_id === currentUser.id); %>
+          <% if (!userReview) { %>
+            <form action="/reviews" method="POST" class="review-form">
+              <input type="hidden" name="event_id" value="<%= event.id %>">
+              <div class="form-group">
+                <label>Rating</label>
+                <div class="star-rating">
+                  <% for (let i = 5; i >= 1; i--) { %>
+                    <input type="radio" id="star<%= i %>" name="rating" value="<%= i %>" required>
+                    <label for="star<%= i %>">&#9733;</label>
+                  <% } %>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="review-title">Title (optional)</label>
+                <input type="text" id="review-title" name="title" placeholder="Summarize your experience">
+              </div>
+              <div class="form-group">
+                <label for="review-content">Your Review</label>
+                <textarea id="review-content" name="content" rows="3" required
+                          placeholder="What did you think of this event?"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Post Review</button>
+            </form>
+          <% } %>
+        <% } %>
+
+        <% if (reviews.length === 0) { %>
+          <p class="text-muted">No reviews yet. Be the first!</p>
+        <% } else { %>
+          <div class="reviews-list">
+            <% reviews.forEach(review => { %>
+              <div class="review-card">
+                <div class="review-header">
+                  <a href="/profile/<%= review.username %>" class="review-author"><%= review.username %></a>
+                  <div class="review-stars">
+                    <% for (let i = 1; i <= 5; i++) { %>
+                      <span class="<%= i <= review.rating ? 'star-filled' : 'star-empty' %>">&#9733;</span>
+                    <% } %>
+                  </div>
+                  <span class="review-date"><%= new Date(review.created_at).toLocaleDateString() %></span>
+                </div>
+                <% if (review.title) { %><h4><%= review.title %></h4><% } %>
+                <p><%= review.content %></p>
+
+                <div class="review-footer">
+                  <!-- Helpful/Not Helpful Voting -->
+                  <% if (currentUser && currentUser.id !== review.user_id) { %>
+                    <div class="review-votes">
+                      <form action="/reviews/<%= review.id %>/vote" method="POST" class="inline-form">
+                        <input type="hidden" name="vote" value="1">
+                        <button type="submit" class="vote-btn <%= userVotes[review.id] === 1 ? 'voted' : '' %>">
+                          <span class="vote-icon">&#x1F44D;</span>
+                          Helpful <% if (review.helpful_count > 0) { %>(<%= review.helpful_count %>)<% } %>
+                        </button>
+                      </form>
+                      <form action="/reviews/<%= review.id %>/vote" method="POST" class="inline-form">
+                        <input type="hidden" name="vote" value="-1">
+                        <button type="submit" class="vote-btn <%= userVotes[review.id] === -1 ? 'voted' : '' %>">
+                          <span class="vote-icon">&#x1F44E;</span>
+                          Not Helpful <% if (review.not_helpful_count > 0) { %>(<%= review.not_helpful_count %>)<% } %>
+                        </button>
+                      </form>
+                    </div>
+                  <% } else if (!currentUser) { %>
+                    <div class="review-votes text-muted">
+                      <% if (review.helpful_count > 0 || review.not_helpful_count > 0) { %>
+                        <span><%= review.helpful_count %> found helpful</span>
+                      <% } %>
+                    </div>
+                  <% } %>
+
+                  <!-- Edit/Delete for own reviews -->
+                  <% if (currentUser && currentUser.id === review.user_id) { %>
+                    <div class="review-actions">
+                      <a href="/reviews/<%= review.id %>/edit" class="btn btn-outline btn-sm">Edit</a>
+                      <form action="/reviews/<%= review.id %>/delete" method="POST" class="inline-form">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Delete this review?')">Delete</button>
+                      </form>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Sidebar: VIP Tables -->
+    <div class="event-detail-sidebar">
+      <div class="detail-section">
+        <h2>VIP Tables</h2>
+
+        <% if (tables.length === 0) { %>
+          <p class="text-muted">No VIP tables listed for this event yet.</p>
+        <% } else { %>
+          <% tables.forEach(table => { %>
+            <div class="table-card">
+              <div class="table-card-header">
+                <strong><%= table.table_label || 'VIP Table' %></strong>
+                <span>by <a href="/profile/<%= table.host_name %>"><%= table.host_name %></a></span>
+              </div>
+              <p><%= table.available_seats %> of <%= table.total_seats %> seats available</p>
+              <p class="table-price"><%= table.currency %> <%= table.price_per_seat.toFixed(2) %> / seat</p>
+              <% if (table.description) { %><p class="text-muted"><%= table.description %></p><% } %>
+              <% if (currentUser && currentUser.id !== table.host_id) { %>
+                <form action="/tables/<%= table.id %>/book" method="POST" class="table-book-form">
+                  <select name="seats" class="filter-select">
+                    <% for (let i = 1; i <= table.available_seats; i++) { %>
+                      <option value="<%= i %>"><%= i %> seat<%= i > 1 ? 's' : '' %></option>
+                    <% } %>
+                  </select>
+                  <button type="submit" class="btn btn-primary btn-sm">Book</button>
+                </form>
+              <% } %>
+            </div>
+          <% }) %>
+        <% } %>
+
+        <% if (currentUser) { %>
+          <hr>
+          <h3>Share Your Table</h3>
+          <form action="/tables/create" method="POST" class="form">
+            <input type="hidden" name="event_id" value="<%= event.id %>">
+            <div class="form-group">
+              <label>Table Name</label>
+              <input type="text" name="table_label" placeholder='e.g. "Table 12"'>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Total Seats</label>
+                <input type="number" name="total_seats" min="1" required>
+              </div>
+              <div class="form-group">
+                <label>Available</label>
+                <input type="number" name="available_seats" min="1" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Price per Seat ($)</label>
+              <input type="number" name="price_per_seat" min="0" step="0.01" value="0" required>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" name="description" placeholder="Bottle service included, etc.">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">List Table</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

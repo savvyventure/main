@@ -1,0 +1,99 @@
+<%- include('../partials/header') %>
+
+<div class="profile-page">
+  <div class="profile-header">
+    <div class="profile-info">
+      <h1><%= profileUser.full_name %></h1>
+      <p class="profile-username">@<%= profileUser.username %></p>
+      <% if (profileUser.bio) { %>
+        <p class="profile-bio"><%= profileUser.bio %></p>
+      <% } %>
+      <p class="text-muted">Member since <%= new Date(profileUser.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) %></p>
+    </div>
+    <div class="profile-actions">
+      <% if (currentUser && currentUser.username === profileUser.username) { %>
+        <a href="/profile/<%= profileUser.username %>/edit" class="btn btn-outline">Edit Profile</a>
+      <% } else if (currentUser) { %>
+        <% if (hasBlockedYou) { %>
+          <span class="text-muted">This user is unavailable</span>
+        <% } else if (isBlocked) { %>
+          <form action="/messages/unblock/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-outline">Unblock User</button>
+          </form>
+        <% } else if (chatStatus === 'connected') { %>
+          <a href="/messages/chat/<%= profileUser.id %>" class="btn btn-primary">Send Message</a>
+          <form action="/messages/block/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this user? You will no longer be able to message each other.')">Block</button>
+          </form>
+        <% } else if (chatStatus === 'pending_sent') { %>
+          <span class="badge badge-pending">Chat Request Pending</span>
+          <form action="/messages/block/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this user?')">Block</button>
+          </form>
+        <% } else if (chatStatus === 'pending_received') { %>
+          <span class="badge badge-info">Wants to chat with you</span>
+          <a href="/messages" class="btn btn-primary btn-sm">View Request</a>
+        <% } else { %>
+          <form action="/messages/request/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-primary">Request to Chat</button>
+          </form>
+          <form action="/messages/block/<%= profileUser.id %>" method="POST" class="inline-form">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Block this user? They will not be able to contact you.')">Block</button>
+          </form>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Events by this user -->
+  <div class="detail-section">
+    <h2>Events</h2>
+    <% if (events.length === 0) { %>
+      <p class="text-muted">No events yet.</p>
+    <% } else { %>
+      <div class="events-grid">
+        <% events.forEach(event => { %>
+          <a href="/events/<%= event.id %>" class="event-card">
+            <div class="event-card-header">
+              <span class="event-date"><%= new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
+              <% if (event.price > 0) { %>
+                <span class="event-price"><%= event.currency %> <%= event.price.toFixed(2) %></span>
+              <% } else { %>
+                <span class="event-price free">FREE</span>
+              <% } %>
+            </div>
+            <h3 class="event-card-title"><%= event.title %></h3>
+            <p class="event-card-venue"><%= event.venue %></p>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Reviews by this user -->
+  <div class="detail-section">
+    <h2>Reviews</h2>
+    <% if (reviews.length === 0) { %>
+      <p class="text-muted">No reviews yet.</p>
+    <% } else { %>
+      <div class="reviews-list">
+        <% reviews.forEach(review => { %>
+          <div class="review-card">
+            <div class="review-header">
+              <a href="/events/<%= review.event_id %>"><%= review.event_title %></a>
+              <div class="review-stars">
+                <% for (let i = 1; i <= 5; i++) { %>
+                  <span class="<%= i <= review.rating ? 'star-filled' : 'star-empty' %>">&#9733;</span>
+                <% } %>
+              </div>
+            </div>
+            <% if (review.title) { %><h4><%= review.title %></h4><% } %>
+            <p><%= review.content %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

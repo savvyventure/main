@@ -1,0 +1,30 @@
+{
+  "name": "syncup",
+  "version": "1.0.0",
+  "description": "SyncUp - Social platform for party and event enthusiasts",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:init": "node src/db/init.js",
+    "db:seed": "node src/db/seed.js",
+    "db:reset": "rm -f data/syncup.db && npm run db:init && npm run db:seed",
+    "postinstall": "npm run db:init"
+  },
+  "keywords": ["events", "social", "party", "vip"],
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^11.7.0",
+    "connect-sqlite3": "^0.9.15",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.1",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.1"
+  }
+}

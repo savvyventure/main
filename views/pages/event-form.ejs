@@ -1,0 +1,92 @@
+<%- include('../partials/header') %>
+
+<div class="form-page">
+  <h1><%= event && event.id ? 'Edit Event' : 'Create Event' %></h1>
+
+  <% if (errors.length > 0) { %>
+    <div class="alert alert-error">
+      <% errors.forEach(err => { %>
+        <p><%= err.msg %></p>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <form action="<%= event && event.id ? '/events/' + event.id + '/edit' : '/events' %>"
+        method="POST" class="form">
+
+    <div class="form-group">
+      <label for="title">Event Title *</label>
+      <input type="text" id="title" name="title" required
+             value="<%= event ? event.title || '' : '' %>"
+             placeholder="Give your event a catchy name">
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description *</label>
+      <textarea id="description" name="description" rows="4" required
+                placeholder="Tell people what this event is about"><%= event ? event.description || '' : '' %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="venue">Venue *</label>
+      <input type="text" id="venue" name="venue" required
+             value="<%= event ? event.venue || '' : '' %>"
+             placeholder="Club name or venue">
+    </div>
+
+    <div class="form-group">
+      <label for="address">Address</label>
+      <input type="text" id="address" name="address"
+             value="<%= event ? event.address || '' : '' %>"
+             placeholder="Street address (optional)">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="event_date">Start Date & Time *</label>
+        <input type="datetime-local" id="event_date" name="event_date" required
+               value="<%= event && event.event_date ? event.event_date.slice(0,16) : '' %>">
+      </div>
+      <div class="form-group">
+        <label for="event_end">End Date & Time</label>
+        <input type="datetime-local" id="event_end" name="event_end"
+               value="<%= event && event.event_end ? event.event_end.slice(0,16) : '' %>">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="dj_artist">DJ / Artist</label>
+        <input type="text" id="dj_artist" name="dj_artist"
+               value="<%= event ? event.dj_artist || '' : '' %>"
+               placeholder="Who's performing?">
+      </div>
+      <div class="form-group">
+        <label for="genre">Genre</label>
+        <input type="text" id="genre" name="genre"
+               value="<%= event ? event.genre || '' : '' %>"
+               placeholder="e.g. House, Hip-Hop, Techno">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="price">Ticket Price ($)</label>
+        <input type="number" id="price" name="price" min="0" step="0.01"
+               value="<%= event ? event.price || 0 : 0 %>">
+      </div>
+      <div class="form-group">
+        <label for="capacity">Capacity</label>
+        <input type="number" id="capacity" name="capacity" min="0"
+               value="<%= event ? event.capacity || 0 : 0 %>"
+               placeholder="0 = unlimited">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">
+      <%= event && event.id ? 'Update Event' : 'Create Event' %>
+    </button>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

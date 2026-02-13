@@ -1,0 +1,94 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>My Bookings</h1>
+  <p class="text-muted">VIP table seats you have reserved</p>
+</div>
+
+<% if (query.success) { %>
+  <div class="alert alert-success"><p><%= query.success %></p></div>
+<% } %>
+<% if (query.error) { %>
+  <div class="alert alert-error"><p><%= query.error %></p></div>
+<% } %>
+
+<% if (bookings.length === 0) { %>
+  <div class="empty-state">
+    <h2>No bookings yet</h2>
+    <p>Find an event with VIP tables and book a seat!</p>
+    <a href="/events" class="btn btn-primary" style="margin-top:1rem">Browse Events</a>
+  </div>
+<% } else { %>
+  <%
+    const activeBookings = bookings.filter(b => b.status !== 'cancelled');
+    const cancelledBookings = bookings.filter(b => b.status === 'cancelled');
+  %>
+
+  <% if (activeBookings.length > 0) { %>
+    <div class="dashboard-list">
+      <% activeBookings.forEach(booking => { %>
+        <div class="dashboard-card">
+          <div class="dashboard-card-top">
+            <div class="dashboard-card-info">
+              <h3><%= booking.table_label || 'VIP Table' %></h3>
+              <p class="dashboard-card-event">
+                <a href="/events/<%= booking.event_id %>"><%= booking.event_title %></a>
+              </p>
+              <p class="text-muted">
+                <%= booking.venue %> &middot;
+                <%= new Date(booking.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
+              </p>
+              <p class="text-muted">Hosted by <a href="/profile/<%= booking.host_name %>">@<%= booking.host_name %></a></p>
+            </div>
+            <div class="dashboard-card-stats">
+              <div class="dashboard-stat">
+                <span class="dashboard-stat-num"><%= booking.seats %></span>
+                <span class="dashboard-stat-label">seat<%= booking.seats > 1 ? 's' : '' %></span>
+              </div>
+              <div class="dashboard-stat">
+                <span class="dashboard-stat-num"><%= booking.currency %> <%= (booking.price_per_seat * booking.seats).toFixed(2) %></span>
+                <span class="dashboard-stat-label">total</span>
+              </div>
+              <span class="status-badge status-<%= booking.status %>"><%= booking.status %></span>
+            </div>
+          </div>
+          <div class="dashboard-card-actions">
+            <a href="/events/<%= booking.event_id %>" class="btn btn-outline btn-sm">View Event</a>
+            <form action="/tables/bookings/<%= booking.id %>/cancel" method="POST" class="inline-form">
+              <button type="submit" class="btn btn-danger btn-sm"
+                      onclick="return confirm('Cancel this booking?')">
+                Cancel Booking
+              </button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (cancelledBookings.length > 0) { %>
+    <details class="cancelled-section">
+      <summary class="cancelled-toggle">Cancelled bookings (<%= cancelledBookings.length %>)</summary>
+      <div class="dashboard-list" style="margin-top: 1rem;">
+        <% cancelledBookings.forEach(booking => { %>
+          <div class="dashboard-card dashboard-card-cancelled">
+            <div class="dashboard-card-top">
+              <div class="dashboard-card-info">
+                <h3><%= booking.table_label || 'VIP Table' %></h3>
+                <p class="dashboard-card-event">
+                  <a href="/events/<%= booking.event_id %>"><%= booking.event_title %></a>
+                </p>
+                <p class="text-muted"><%= booking.venue %></p>
+              </div>
+              <div class="dashboard-card-stats">
+                <span class="status-badge status-cancelled">cancelled</span>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </details>
+  <% } %>
+<% } %>
+
+<%- include('../partials/footer') %>
