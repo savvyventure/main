@@ -1,0 +1,70 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1>Admin - Users</h1>
+  <p class="text-muted"><%= users.length %> registered users</p>
+</div>
+
+<% if (typeof query !== 'undefined' && query.success) { %>
+  <div class="alert alert-success"><%= query.success %></div>
+<% } %>
+<% if (typeof query !== 'undefined' && query.error) { %>
+  <div class="alert alert-error"><%= query.error %></div>
+<% } %>
+
+<div class="admin-nav">
+  <a href="/admin/users" class="btn btn-primary btn-sm">Users</a>
+  <a href="/analytics" class="btn btn-outline btn-sm">Analytics</a>
+</div>
+
+<div class="detail-section">
+  <% if (users.length === 0) { %>
+    <p class="text-muted">No users yet.</p>
+  <% } else { %>
+    <div class="admin-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Full Name</th>
+            <th>Events</th>
+            <th>Reviews</th>
+            <th>Bookings</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(user => { %>
+            <tr>
+              <td><%= user.id %></td>
+              <td>
+                <a href="/profile/<%= user.username %>"><%= user.username %></a>
+                <% if (user.id === 1) { %><span class="badge badge-info">Admin</span><% } %>
+              </td>
+              <td><%= user.email %></td>
+              <td><%= user.full_name %></td>
+              <td><%= user.event_count %></td>
+              <td><%= user.review_count %></td>
+              <td><%= user.booking_count %></td>
+              <td><%= new Date(user.created_at).toLocaleDateString() %></td>
+              <td class="admin-actions">
+                <a href="/admin/users/<%= user.id %>" class="btn btn-outline btn-sm">View</a>
+                <% if (user.id !== 1) { %>
+                  <form action="/admin/users/<%= user.id %>/delete" method="POST" class="inline-form">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Delete user <%= user.username %>? This cannot be undone.')">Delete</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

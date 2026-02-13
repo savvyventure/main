@@ -1,0 +1,120 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1><%= user.username %></h1>
+    <p class="text-muted"><%= user.email %></p>
+  </div>
+  <a href="/admin/users" class="btn btn-outline">Back to Users</a>
+</div>
+
+<div class="admin-user-info">
+  <div class="detail-section">
+    <h2>User Information</h2>
+    <div class="detail-list">
+      <div class="detail-item">
+        <strong>ID</strong>
+        <span><%= user.id %></span>
+      </div>
+      <div class="detail-item">
+        <strong>Username</strong>
+        <span><%= user.username %></span>
+      </div>
+      <div class="detail-item">
+        <strong>Email</strong>
+        <span><%= user.email %></span>
+      </div>
+      <div class="detail-item">
+        <strong>Full Name</strong>
+        <span><%= user.full_name %></span>
+      </div>
+      <div class="detail-item">
+        <strong>Bio</strong>
+        <span><%= user.bio || '(none)' %></span>
+      </div>
+      <div class="detail-item">
+        <strong>Joined</strong>
+        <span><%= new Date(user.created_at).toLocaleString() %></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-grid">
+  <!-- User's Events -->
+  <div class="detail-section">
+    <h2>Events (<%= events.length %>)</h2>
+    <% if (events.length === 0) { %>
+      <p class="text-muted">No events created.</p>
+    <% } else { %>
+      <div class="admin-list">
+        <% events.forEach(event => { %>
+          <div class="admin-list-item">
+            <a href="/events/<%= event.id %>"><%= event.title %></a>
+            <span class="text-muted"><%= new Date(event.event_date).toLocaleDateString() %></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- User's Reviews -->
+  <div class="detail-section">
+    <h2>Reviews (<%= reviews.length %>)</h2>
+    <% if (reviews.length === 0) { %>
+      <p class="text-muted">No reviews written.</p>
+    <% } else { %>
+      <div class="admin-list">
+        <% reviews.forEach(review => { %>
+          <div class="admin-list-item">
+            <div>
+              <a href="/events/<%= review.event_id %>"><%= review.event_title %></a>
+              <div class="review-stars" style="font-size: 0.8rem;">
+                <% for (let i = 1; i <= 5; i++) { %>
+                  <span class="<%= i <= review.rating ? 'star-filled' : 'star-empty' %>">&#9733;</span>
+                <% } %>
+              </div>
+            </div>
+            <span class="text-muted"><%= new Date(review.created_at).toLocaleDateString() %></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- User's Bookings -->
+  <div class="detail-section">
+    <h2>Bookings (<%= bookings.length %>)</h2>
+    <% if (bookings.length === 0) { %>
+      <p class="text-muted">No table bookings.</p>
+    <% } else { %>
+      <div class="admin-list">
+        <% bookings.forEach(booking => { %>
+          <div class="admin-list-item">
+            <div>
+              <span><%= booking.table_label || 'VIP Table' %></span>
+              <span class="text-muted">at <%= booking.event_title %></span>
+            </div>
+            <span class="badge badge-<%= booking.status === 'confirmed' ? 'info' : booking.status === 'cancelled' ? 'pending' : '' %>">
+              <%= booking.status %>
+            </span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<% if (user.id !== 1) { %>
+  <div class="detail-section" style="margin-top: 2rem;">
+    <h2>Danger Zone</h2>
+    <form action="/admin/users/<%= user.id %>/delete" method="POST">
+      <button type="submit" class="btn btn-danger"
+              onclick="return confirm('Are you sure you want to delete <%= user.username %>? All their data will be permanently removed.')">
+        Delete User
+      </button>
+    </form>
+  </div>
+<% } %>
+
+<%- include('../partials/footer') %>

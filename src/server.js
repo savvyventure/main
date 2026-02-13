@@ -112,6 +112,7 @@ const reviewRoutes = require('./routes/reviews');
 const profileRoutes = require('./routes/profile');
 const notificationRoutes = require('./routes/notifications');
 const analyticsRoutes = require('./routes/analytics');
+const adminRoutes = require('./routes/admin');
 
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
@@ -122,6 +123,7 @@ app.use('/reviews', reviewRoutes);
 app.use('/profile', profileRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/analytics', analyticsRoutes);
+app.use('/admin', adminRoutes);
 
 // ------- SOCKET.IO (real-time messaging) -------
 
