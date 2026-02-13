@@ -129,7 +129,13 @@ Deletes the database and recreates it with fresh seed data.
 4. Add environment variables:
    - `NODE_ENV=production`
    - `SESSION_SECRET=<your-secure-secret>`
-5. Deploy!
+5. **IMPORTANT: Add persistent storage** (required for SQLite):
+   - Go to your service's **Settings** tab
+   - Scroll to **Volumes** section
+   - Click **Add Volume**
+   - Set mount path: `/app/data`
+   - Save and redeploy
+6. Deploy!
 
 Railway will automatically:
 - Install dependencies
