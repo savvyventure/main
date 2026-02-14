@@ -16,7 +16,7 @@ A social platform for party and event enthusiasts. Find events, share VIP tables
 ## Tech Stack
 
 - **Backend**: Node.js + Express.js
-- **Database**: SQLite (via better-sqlite3)
+- **Database**: PostgreSQL (via pg)
 - **Templates**: EJS (server-side rendering)
 - **Real-time**: Socket.io
 - **Auth**: express-session + bcrypt
@@ -28,6 +28,7 @@ A social platform for party and event enthusiasts. Find events, share VIP tables
 
 - Node.js 18+ installed
 - npm (comes with Node.js)
+- PostgreSQL database (local or hosted)
 
 ### Installation
 
@@ -68,8 +69,7 @@ Copy `.env.example` to `.env` and configure:
 | `PORT` | Server port | `3000` |
 | `NODE_ENV` | Environment (`development` or `production`) | `development` |
 | `SESSION_SECRET` | Secret for session cookies | (dev default) |
-| `DATABASE_PATH` | Path to SQLite database | `data/syncup.db` |
-| `SESSIONS_PATH` | Directory for session database | `data/` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://localhost/syncup` |
 
 **Important**: Generate a secure `SESSION_SECRET` for production:
 ```bash
@@ -126,34 +126,39 @@ Deletes the database and recreates it with fresh seed data.
 1. Push your code to GitHub
 2. Create a new project on [Railway](https://railway.app)
 3. Connect your GitHub repository
-4. Add environment variables:
+4. Add a PostgreSQL database:
+   - Click **"+ New"** → **"Database"** → **"PostgreSQL"**
+   - Railway will provision a database and set `DATABASE_URL` automatically
+5. Add environment variables to your app service:
    - `NODE_ENV=production`
    - `SESSION_SECRET=<your-secure-secret>`
-5. **IMPORTANT: Add persistent storage** (required for SQLite):
-   - Go to your service's **Settings** tab
-   - Scroll to **Volumes** section
-   - Click **Add Volume**
-   - Set mount path: `/app/data`
-   - Save and redeploy
 6. Deploy!
 
 Railway will automatically:
 - Install dependencies
-- Run `npm run db:init` (via postinstall)
+- Connect to the PostgreSQL database via `DATABASE_URL`
+- Run `npm run db:init` (via postinstall script)
 - Start the server
 
 ### Render
 
 1. Create a new Web Service on [Render](https://render.com)
-2. Connect your repository
-3. Set build command: `npm install`
-4. Set start command: `npm start`
-5. Add environment variables
-6. Create a persistent disk and mount at `/data`
+2. Add a PostgreSQL database from Render's dashboard
+3. Connect your repository
+4. Set build command: `npm install`
+5. Set start command: `npm start`
+6. Add environment variables:
+   - `DATABASE_URL` (from PostgreSQL connection string)
+   - `NODE_ENV=production`
+   - `SESSION_SECRET=<your-secure-secret>`
 
 ### Manual / VPS
 
 ```bash
+# Install and setup PostgreSQL
+sudo apt-get install postgresql postgresql-contrib
+sudo -u postgres createdb syncup
+
 # Clone and install
 git clone <repository-url>
 cd syncup
@@ -162,6 +167,7 @@ npm install --production
 # Set environment variables
 export NODE_ENV=production
 export SESSION_SECRET="your-secure-secret"
+export DATABASE_URL="postgresql://username:password@localhost/syncup"
 export PORT=3000
 
 # Initialize database
@@ -179,7 +185,7 @@ syncup/
 ├── src/
 │   ├── server.js          # Entry point
 │   ├── db/
-│   │   ├── database.js    # SQLite connection
+│   │   ├── database.js    # PostgreSQL connection
 │   │   ├── schema.sql     # Table definitions
 │   │   ├── init.js        # DB initialization
 │   │   └── seed.js        # Sample data
@@ -203,7 +209,6 @@ syncup/
 ├── public/
 │   ├── css/style.css      # Styles
 │   └── images/            # Static images
-├── data/                  # SQLite databases
 ├── package.json
 ├── railway.json           # Railway config
 ├── Procfile               # Heroku/Render
@@ -212,19 +217,15 @@ syncup/
 
 ## Troubleshooting
 
-### "Database is locked"
-This can happen with concurrent writes. The app uses WAL mode to minimize this. If it persists:
-```bash
-# Stop the server
-# Delete the WAL files
-rm data/syncup.db-wal data/syncup.db-shm
-# Restart
-npm start
-```
+### "Connection to PostgreSQL failed"
+- Verify `DATABASE_URL` is correctly set
+- Ensure PostgreSQL is running: `sudo service postgresql status`
+- Check database credentials and permissions
+- For Railway/Render, verify the database service is running
 
 ### "Session not persisting"
 - Ensure `SESSION_SECRET` is set and consistent across restarts
-- Check that `data/sessions.db` is writable
+- Check that PostgreSQL `session` table was created
 - In production, ensure `secure: true` cookies work (requires HTTPS)
 
 ### "bcrypt installation fails"

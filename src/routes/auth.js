@@ -46,8 +46,8 @@ router.post('/signup', redirectIfAuth, [
   const { username, email, full_name, password } = req.body;
 
   // Check if username or email already exists
-  const existing = db.prepare(
-    'SELECT id FROM users WHERE username = ? OR email = ?'
+  const existing = await db.prepare(
+    'SELECT id FROM users WHERE username = $1 OR email = $2'
   ).get(username, email);
 
   if (existing) {
@@ -61,18 +61,21 @@ router.post('/signup', redirectIfAuth, [
   // Hash the password (never store plain text passwords!)
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  // Insert the new user
-  const result = db.prepare(
-    'INSERT INTO users (username, email, password_hash, full_name) VALUES (?, ?, ?, ?)'
-  ).run(username, email, passwordHash, full_name);
+  // Insert the new user and return the created user
+  const result = await db.pool.query(
+    'INSERT INTO users (username, email, password_hash, full_name) VALUES ($1, $2, $3, $4) RETURNING id, username, email, full_name, avatar_url',
+    [username, email, passwordHash, full_name]
+  );
+
+  const newUser = result.rows[0];
 
   // Log them in immediately
   req.session.user = {
-    id: result.lastInsertRowid,
-    username,
-    email,
-    full_name,
-    avatar_url: '/images/default-avatar.png',
+    id: newUser.id,
+    username: newUser.username,
+    email: newUser.email,
+    full_name: newUser.full_name,
+    avatar_url: newUser.avatar_url,
   };
 
   res.redirect('/');
@@ -101,7 +104,7 @@ router.post('/login', redirectIfAuth, [
   const { email, password } = req.body;
 
   // Find the user by email
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const user = await db.prepare('SELECT * FROM users WHERE email = $1').get(email);
 
   if (!user) {
     return res.render('pages/login', {

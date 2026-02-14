@@ -16,14 +16,14 @@ function requireAdmin(req, res, next) {
 
 // ------- ADMIN DASHBOARD -------
 
-router.get('/', requireAuth, requireAdmin, (req, res) => {
+router.get('/', requireAuth, requireAdmin, async (req, res) => {
   res.redirect('/admin/users');
 });
 
 // ------- LIST ALL USERS -------
 
-router.get('/users', requireAuth, requireAdmin, (req, res) => {
-  const users = db.prepare(`
+router.get('/users', requireAuth, requireAdmin, async (req, res) => {
+  const users = await db.prepare(`
     SELECT
       u.id, u.username, u.email, u.full_name, u.created_at,
       (SELECT COUNT(*) FROM events WHERE creator_id = u.id) AS event_count,
@@ -41,9 +41,9 @@ router.get('/users', requireAuth, requireAdmin, (req, res) => {
 
 // ------- VIEW USER DETAILS -------
 
-router.get('/users/:id', requireAuth, requireAdmin, (req, res) => {
-  const user = db.prepare(`
-    SELECT * FROM users WHERE id = ?
+router.get('/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const user = await db.prepare(`
+    SELECT * FROM users WHERE id = $1
   `).get(req.params.id);
 
   if (!user) {
@@ -53,24 +53,24 @@ router.get('/users/:id', requireAuth, requireAdmin, (req, res) => {
     });
   }
 
-  const events = db.prepare(`
-    SELECT * FROM events WHERE creator_id = ? ORDER BY created_at DESC
+  const events = await db.prepare(`
+    SELECT * FROM events WHERE creator_id = $1 ORDER BY created_at DESC
   `).all(user.id);
 
-  const reviews = db.prepare(`
+  const reviews = await db.prepare(`
     SELECT r.*, e.title AS event_title
     FROM reviews r
     JOIN events e ON r.event_id = e.id
-    WHERE r.user_id = ?
+    WHERE r.user_id = $1
     ORDER BY r.created_at DESC
   `).all(user.id);
 
-  const bookings = db.prepare(`
+  const bookings = await db.prepare(`
     SELECT tb.*, vt.table_label, e.title AS event_title
     FROM table_bookings tb
     JOIN vip_tables vt ON tb.table_id = vt.id
     JOIN events e ON vt.event_id = e.id
-    WHERE tb.user_id = ?
+    WHERE tb.user_id = $1
     ORDER BY tb.created_at DESC
   `).all(user.id);
 
@@ -85,7 +85,7 @@ router.get('/users/:id', requireAuth, requireAdmin, (req, res) => {
 
 // ------- DELETE USER -------
 
-router.post('/users/:id/delete', requireAuth, requireAdmin, (req, res) => {
+router.post('/users/:id/delete', requireAuth, requireAdmin, async (req, res) => {
   const userId = parseInt(req.params.id);
 
   // Don't allow deleting yourself (admin)
@@ -94,17 +94,17 @@ router.post('/users/:id/delete', requireAuth, requireAdmin, (req, res) => {
   }
 
   // Delete user's data (cascade)
-  db.prepare('DELETE FROM review_votes WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM reviews WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM table_bookings WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM vip_tables WHERE host_id = ?').run(userId);
-  db.prepare('DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?').run(userId, userId);
-  db.prepare('DELETE FROM chat_consent WHERE requester_id = ? OR target_id = ?').run(userId, userId);
-  db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM user_blocks WHERE blocker_id = ? OR blocked_id = ?').run(userId, userId);
-  db.prepare('DELETE FROM page_views WHERE user_id = ?').run(userId);
-  db.prepare('DELETE FROM events WHERE creator_id = ?').run(userId);
-  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  await db.prepare('DELETE FROM review_votes WHERE user_id = $1').run(userId);
+  await db.prepare('DELETE FROM reviews WHERE user_id = $1').run(userId);
+  await db.prepare('DELETE FROM table_bookings WHERE user_id = $1').run(userId);
+  await db.prepare('DELETE FROM vip_tables WHERE host_id = $1').run(userId);
+  await db.prepare('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1').run(userId);
+  await db.prepare('DELETE FROM chat_consent WHERE requester_id = $1 OR target_id = $1').run(userId);
+  await db.prepare('DELETE FROM notifications WHERE user_id = $1').run(userId);
+  await db.prepare('DELETE FROM user_blocks WHERE blocker_id = $1 OR blocked_id = $1').run(userId);
+  await db.prepare('DELETE FROM page_views WHERE user_id = $1').run(userId);
+  await db.prepare('DELETE FROM events WHERE creator_id = $1').run(userId);
+  await db.prepare('DELETE FROM users WHERE id = $1').run(userId);
 
   res.redirect('/admin/users?success=User deleted');
 });

@@ -10,7 +10,7 @@ router.post('/', requireAuth, [
   body('event_id').isInt().withMessage('Event is required'),
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1-5'),
   body('content').trim().isLength({ min: 1 }).withMessage('Review text is required'),
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   const eventId = req.body.event_id;
 
@@ -21,16 +21,16 @@ router.post('/', requireAuth, [
   const { rating, title, content } = req.body;
 
   // Check if the user already reviewed this event
-  const existing = db.prepare(
-    'SELECT id FROM reviews WHERE user_id = ? AND event_id = ?'
+  const existing = await db.prepare(
+    'SELECT id FROM reviews WHERE user_id = $1 AND event_id = $2'
   ).get(req.session.user.id, eventId);
 
   if (existing) {
     return res.redirect(`/events/${eventId}?error=You already reviewed this event`);
   }
 
-  db.prepare(
-    'INSERT INTO reviews (user_id, event_id, rating, title, content) VALUES (?, ?, ?, ?, ?)'
+  await db.prepare(
+    'INSERT INTO reviews (user_id, event_id, rating, title, content) VALUES ($1, $2, $3, $4, $5)'
   ).run(req.session.user.id, eventId, rating, title || '', content);
 
   res.redirect(`/events/${eventId}?success=Review posted!`);
@@ -38,12 +38,12 @@ router.post('/', requireAuth, [
 
 // ------- EDIT A REVIEW (GET form) -------
 
-router.get('/:id/edit', requireAuth, (req, res) => {
-  const review = db.prepare(`
+router.get('/:id/edit', requireAuth, async (req, res) => {
+  const review = await db.prepare(`
     SELECT r.*, e.title AS event_title
     FROM reviews r
     JOIN events e ON r.event_id = e.id
-    WHERE r.id = ? AND r.user_id = ?
+    WHERE r.id = $1 AND r.user_id = $2
   `).get(req.params.id, req.session.user.id);
 
   if (!review) {
@@ -64,8 +64,8 @@ router.get('/:id/edit', requireAuth, (req, res) => {
 router.post('/:id/edit', requireAuth, [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1-5'),
   body('content').trim().isLength({ min: 1 }).withMessage('Review text is required'),
-], (req, res) => {
-  const review = db.prepare('SELECT * FROM reviews WHERE id = ? AND user_id = ?')
+], async (req, res) => {
+  const review = await db.prepare('SELECT * FROM reviews WHERE id = $1 AND user_id = $2')
     .get(req.params.id, req.session.user.id);
 
   if (!review) {
@@ -82,10 +82,10 @@ router.post('/:id/edit', requireAuth, [
 
   const { rating, title, content } = req.body;
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE reviews
-    SET rating = ?, title = ?, content = ?, updated_at = datetime('now')
-    WHERE id = ?
+    SET rating = $1, title = $2, content = $3, updated_at = NOW()
+    WHERE id = $4
   `).run(rating, title || '', content, req.params.id);
 
   res.redirect(`/events/${review.event_id}?success=Review updated!`);
@@ -93,8 +93,8 @@ router.post('/:id/edit', requireAuth, [
 
 // ------- DELETE A REVIEW -------
 
-router.post('/:id/delete', requireAuth, (req, res) => {
-  const review = db.prepare('SELECT * FROM reviews WHERE id = ? AND user_id = ?')
+router.post('/:id/delete', requireAuth, async (req, res) => {
+  const review = await db.prepare('SELECT * FROM reviews WHERE id = $1 AND user_id = $2')
     .get(req.params.id, req.session.user.id);
 
   if (!review) {
@@ -104,13 +104,13 @@ router.post('/:id/delete', requireAuth, (req, res) => {
     });
   }
 
-  db.prepare('DELETE FROM reviews WHERE id = ?').run(req.params.id);
+  await db.prepare('DELETE FROM reviews WHERE id = $1').run(req.params.id);
   res.redirect(`/events/${review.event_id}`);
 });
 
 // ------- VOTE ON A REVIEW (helpful/not helpful) -------
 
-router.post('/:id/vote', requireAuth, (req, res) => {
+router.post('/:id/vote', requireAuth, async (req, res) => {
   const reviewId = parseInt(req.params.id);
   const userId = req.session.user.id;
   const vote = parseInt(req.body.vote); // 1 = helpful, -1 = not helpful
@@ -120,7 +120,7 @@ router.post('/:id/vote', requireAuth, (req, res) => {
   }
 
   // Get the review to find the event_id
-  const review = db.prepare('SELECT * FROM reviews WHERE id = ?').get(reviewId);
+  const review = await db.prepare('SELECT * FROM reviews WHERE id = $1').get(reviewId);
   if (!review) {
     return res.status(404).json({ error: 'Review not found' });
   }
@@ -131,21 +131,21 @@ router.post('/:id/vote', requireAuth, (req, res) => {
   }
 
   // Check existing vote
-  const existing = db.prepare(
-    'SELECT * FROM review_votes WHERE review_id = ? AND user_id = ?'
+  const existing = await db.prepare(
+    'SELECT * FROM review_votes WHERE review_id = $1 AND user_id = $2'
   ).get(reviewId, userId);
 
   if (existing) {
     if (existing.vote === vote) {
       // Same vote = remove it (toggle off)
-      db.prepare('DELETE FROM review_votes WHERE id = ?').run(existing.id);
+      await db.prepare('DELETE FROM review_votes WHERE id = $1').run(existing.id);
     } else {
       // Different vote = update it
-      db.prepare('UPDATE review_votes SET vote = ? WHERE id = ?').run(vote, existing.id);
+      await db.prepare('UPDATE review_votes SET vote = $1 WHERE id = $2').run(vote, existing.id);
     }
   } else {
     // New vote
-    db.prepare('INSERT INTO review_votes (review_id, user_id, vote) VALUES (?, ?, ?)')
+    await db.prepare('INSERT INTO review_votes (review_id, user_id, vote) VALUES ($1, $2, $3)')
       .run(reviewId, userId, vote);
   }
 

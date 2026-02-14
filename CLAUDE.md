@@ -12,13 +12,16 @@
 
 - **Runtime**: Node.js (v18+)
 - **Package manager**: npm
-- **Database**: SQLite (via better-sqlite3), stored in `data/syncup.db`
+- **Database**: PostgreSQL (via pg), connection via `DATABASE_URL` env var
 - **Template engine**: EJS
-- **Session store**: SQLite (via connect-sqlite3), stored in `data/sessions.db`
+- **Session store**: PostgreSQL (via connect-pg-simple)
 
 ```bash
 # Install dependencies
 npm install
+
+# Set DATABASE_URL environment variable
+export DATABASE_URL="postgresql://username:password@localhost/syncup"
 
 # Initialize the database (creates tables)
 npm run db:init
@@ -47,7 +50,7 @@ npm run db:init      # Initialize/reset database tables
 src/
   server.js          # Entry point - Express app setup, middleware, Socket.io
   db/
-    database.js      # SQLite connection (shared singleton)
+    database.js      # PostgreSQL connection pool
     schema.sql       # All table definitions
     init.js          # Database initialization script
   routes/
@@ -69,13 +72,12 @@ public/
   css/style.css      # All styles
   js/                # Client-side JavaScript (if needed)
   images/            # Static images
-data/                # SQLite database files (gitignored)
 ```
 
 - **Pattern**: Server-side rendered MVC (Model-View-Controller)
 - **Auth**: Session-based with bcrypt password hashing
 - **Real-time**: Socket.io for private messaging
-- **Database**: Synchronous better-sqlite3 queries
+- **Database**: Async PostgreSQL queries (all route handlers use async/await)
 
 ## Code Conventions
 

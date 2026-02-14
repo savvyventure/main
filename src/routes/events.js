@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 
 // ------- LIST ALL EVENTS (with search & filter) -------
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { search, genre, venue, date_from, date_to } = req.query;
 
   let query = `
@@ -18,38 +18,44 @@ router.get('/', (req, res) => {
     WHERE e.status = 'active'
   `;
   const params = [];
+  let paramCount = 1;
 
   // Apply filters if provided
   if (search) {
-    query += ' AND (e.title LIKE ? OR e.description LIKE ? OR e.dj_artist LIKE ?)';
+    query += ` AND (e.title LIKE $${paramCount} OR e.description LIKE $${paramCount + 1} OR e.dj_artist LIKE $${paramCount + 2})`;
     const term = `%${search}%`;
     params.push(term, term, term);
+    paramCount += 3;
   }
   if (genre) {
-    query += ' AND e.genre = ?';
+    query += ` AND e.genre = $${paramCount}`;
     params.push(genre);
+    paramCount += 1;
   }
   if (venue) {
-    query += ' AND e.venue LIKE ?';
+    query += ` AND e.venue LIKE $${paramCount}`;
     params.push(`%${venue}%`);
+    paramCount += 1;
   }
   if (date_from) {
-    query += ' AND e.event_date >= ?';
+    query += ` AND e.event_date >= $${paramCount}`;
     params.push(date_from);
+    paramCount += 1;
   }
   if (date_to) {
-    query += ' AND e.event_date <= ?';
+    query += ` AND e.event_date <= $${paramCount}`;
     params.push(date_to);
+    paramCount += 1;
   }
 
   query += ' ORDER BY e.event_date ASC';
 
-  const events = db.prepare(query).all(...params);
+  const events = await db.prepare(query).all(...params);
 
   // Get distinct genres for the filter dropdown
-  const genres = db.prepare(
+  const genres = (await db.prepare(
     "SELECT DISTINCT genre FROM events WHERE genre != '' ORDER BY genre"
-  ).all().map(r => r.genre);
+  ).all()).map(r => r.genre);
 
   res.render('pages/events', {
     title: 'Events - SyncUp',
@@ -61,12 +67,12 @@ router.get('/', (req, res) => {
 
 // ------- VIEW SINGLE EVENT -------
 
-router.get('/:id', (req, res) => {
-  const event = db.prepare(`
+router.get('/:id', async (req, res) => {
+  const event = await db.prepare(`
     SELECT e.*, u.username AS creator_name, u.id AS creator_user_id
     FROM events e
     JOIN users u ON e.creator_id = u.id
-    WHERE e.id = ?
+    WHERE e.id = $1
   `).get(req.params.id);
 
   if (!event) {
@@ -77,38 +83,38 @@ router.get('/:id', (req, res) => {
   }
 
   // Get VIP tables for this event
-  const tables = db.prepare(`
+  const tables = await db.prepare(`
     SELECT vt.*, u.username AS host_name
     FROM vip_tables vt
     JOIN users u ON vt.host_id = u.id
-    WHERE vt.event_id = ? AND vt.status = 'available'
+    WHERE vt.event_id = $1 AND vt.status = 'available'
     ORDER BY vt.price_per_seat ASC
   `).all(req.params.id);
 
   // Get reviews for this event with vote counts
-  const reviews = db.prepare(`
+  const reviews = await db.prepare(`
     SELECT r.*, u.username, u.avatar_url,
       (SELECT COUNT(*) FROM review_votes WHERE review_id = r.id AND vote = 1) AS helpful_count,
       (SELECT COUNT(*) FROM review_votes WHERE review_id = r.id AND vote = -1) AS not_helpful_count
     FROM reviews r
     JOIN users u ON r.user_id = u.id
-    WHERE r.event_id = ?
+    WHERE r.event_id = $1
     ORDER BY r.created_at DESC
   `).all(req.params.id);
 
   // Get current user's votes on these reviews
   let userVotes = {};
   if (req.session.user) {
-    const votes = db.prepare(`
+    const votes = await db.prepare(`
       SELECT review_id, vote FROM review_votes
-      WHERE user_id = ? AND review_id IN (SELECT id FROM reviews WHERE event_id = ?)
+      WHERE user_id = $1 AND review_id IN (SELECT id FROM reviews WHERE event_id = $2)
     `).all(req.session.user.id, req.params.id);
     votes.forEach(v => { userVotes[v.review_id] = v.vote; });
   }
 
-  const avgRating = db.prepare(
-    'SELECT ROUND(AVG(rating), 1) AS avg FROM reviews WHERE event_id = ?'
-  ).get(req.params.id).avg;
+  const avgRating = (await db.prepare(
+    'SELECT ROUND(AVG(rating), 1) AS avg FROM reviews WHERE event_id = $1'
+  ).get(req.params.id)).avg;
 
   res.render('pages/event-detail', {
     title: `${event.title} - SyncUp`,
@@ -123,7 +129,7 @@ router.get('/:id', (req, res) => {
 
 // ------- CREATE EVENT -------
 
-router.get('/new/create', requireAuth, (req, res) => {
+router.get('/new/create', requireAuth, async (req, res) => {
   res.render('pages/event-form', {
     title: 'Create Event - SyncUp',
     event: null,
@@ -137,7 +143,7 @@ router.post('/', requireAuth, [
   body('venue').trim().isLength({ min: 1 }).withMessage('Venue is required'),
   body('event_date').isISO8601().withMessage('Valid date is required'),
   body('price').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.render('pages/event-form', {
@@ -149,23 +155,25 @@ router.post('/', requireAuth, [
 
   const { title, description, venue, address, event_date, event_end, dj_artist, genre, price, capacity } = req.body;
 
-  const result = db.prepare(`
+  const result = await db.pool.query(`
     INSERT INTO events (creator_id, title, description, venue, address, event_date, event_end, dj_artist, genre, price, capacity)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING id
+  `, [
     req.session.user.id, title, description, venue,
     address || '', event_date, event_end || null,
     dj_artist || '', genre || '', parseFloat(price) || 0,
     parseInt(capacity) || 0
-  );
+  ]);
 
-  res.redirect(`/events/${result.lastInsertRowid}`);
+  const newId = result.rows[0].id;
+  res.redirect(`/events/${newId}`);
 });
 
 // ------- EDIT EVENT -------
 
-router.get('/:id/edit', requireAuth, (req, res) => {
-  const event = db.prepare('SELECT * FROM events WHERE id = ? AND creator_id = ?')
+router.get('/:id/edit', requireAuth, async (req, res) => {
+  const event = await db.prepare('SELECT * FROM events WHERE id = $1 AND creator_id = $2')
     .get(req.params.id, req.session.user.id);
 
   if (!event) {
@@ -187,8 +195,8 @@ router.post('/:id/edit', requireAuth, [
   body('description').trim().isLength({ min: 1 }).withMessage('Description is required'),
   body('venue').trim().isLength({ min: 1 }).withMessage('Venue is required'),
   body('event_date').isISO8601().withMessage('Valid date is required'),
-], (req, res) => {
-  const event = db.prepare('SELECT * FROM events WHERE id = ? AND creator_id = ?')
+], async (req, res) => {
+  const event = await db.prepare('SELECT * FROM events WHERE id = $1 AND creator_id = $2')
     .get(req.params.id, req.session.user.id);
 
   if (!event) {
@@ -209,10 +217,10 @@ router.post('/:id/edit', requireAuth, [
 
   const { title, description, venue, address, event_date, event_end, dj_artist, genre, price, capacity } = req.body;
 
-  db.prepare(`
-    UPDATE events SET title=?, description=?, venue=?, address=?, event_date=?,
-      event_end=?, dj_artist=?, genre=?, price=?, capacity=?, updated_at=datetime('now')
-    WHERE id = ?
+  await db.prepare(`
+    UPDATE events SET title=$1, description=$2, venue=$3, address=$4, event_date=$5,
+      event_end=$6, dj_artist=$7, genre=$8, price=$9, capacity=$10, updated_at=NOW()
+    WHERE id = $11
   `).run(
     title, description, venue, address || '', event_date,
     event_end || null, dj_artist || '', genre || '',

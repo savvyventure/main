@@ -5,18 +5,36 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./database');
 
-const schemaPath = path.join(__dirname, 'schema.sql');
-const schema = fs.readFileSync(schemaPath, 'utf-8');
+async function initDatabase() {
+  try {
+    const schemaPath = path.join(__dirname, 'schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf-8');
 
-// Execute the entire schema file
-db.exec(schema);
+    // Execute the entire schema file statement by statement
+    const statements = schema.split(';').filter(s => s.trim());
+    for (const statement of statements) {
+      if (statement.trim()) {
+        await db.pool.query(statement);
+      }
+    }
 
-console.log('Database initialized successfully at data/syncup.db');
-console.log('Tables created:');
+    console.log('Database initialized successfully');
+    console.log('Tables created:');
 
-// List all tables that were created
-const tables = db.prepare(
-  "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-).all();
+    // List all tables that were created (PostgreSQL version)
+    const result = await db.pool.query(`
+      SELECT tablename FROM pg_tables
+      WHERE schemaname = 'public'
+      ORDER BY tablename
+    `);
 
-tables.forEach((t) => console.log(`  - ${t.name}`));
+    result.rows.forEach((t) => console.log(`  - ${t.tablename}`));
+
+    process.exit(0);
+  } catch (err) {
+    console.error('Database initialization failed:', err);
+    process.exit(1);
+  }
+}
+
+initDatabase();

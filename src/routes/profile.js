@@ -6,9 +6,9 @@ const { requireAuth } = require('../middleware/auth');
 
 // ------- VIEW PROFILE -------
 
-router.get('/:username', (req, res) => {
-  const user = db.prepare(
-    'SELECT id, username, full_name, bio, avatar_url, created_at FROM users WHERE username = ?'
+router.get('/:username', async (req, res) => {
+  const user = await db.prepare(
+    'SELECT id, username, full_name, bio, avatar_url, created_at FROM users WHERE username = $1'
   ).get(req.params.username);
 
   if (!user) {
@@ -19,16 +19,16 @@ router.get('/:username', (req, res) => {
   }
 
   // Get events created by this user
-  const events = db.prepare(
-    "SELECT * FROM events WHERE creator_id = ? AND status = 'active' ORDER BY event_date DESC"
+  const events = await db.prepare(
+    "SELECT * FROM events WHERE creator_id = $1 AND status = 'active' ORDER BY event_date DESC"
   ).all(user.id);
 
   // Get reviews by this user
-  const reviews = db.prepare(`
+  const reviews = await db.prepare(`
     SELECT r.*, e.title AS event_title
     FROM reviews r
     JOIN events e ON r.event_id = e.id
-    WHERE r.user_id = ?
+    WHERE r.user_id = $1
     ORDER BY r.created_at DESC
   `).all(user.id);
 
@@ -41,9 +41,9 @@ router.get('/:username', (req, res) => {
     const currentUserId = req.session.user.id;
 
     // Check chat consent status
-    const consent = db.prepare(`
+    const consent = await db.prepare(`
       SELECT * FROM chat_consent
-      WHERE (requester_id = ? AND target_id = ?) OR (requester_id = ? AND target_id = ?)
+      WHERE (requester_id = $1 AND target_id = $2) OR (requester_id = $3 AND target_id = $4)
     `).get(currentUserId, user.id, user.id, currentUserId);
 
     if (consent) {
@@ -57,13 +57,13 @@ router.get('/:username', (req, res) => {
     }
 
     // Check block status
-    const blockByMe = db.prepare(
-      'SELECT id FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?'
+    const blockByMe = await db.prepare(
+      'SELECT id FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2'
     ).get(currentUserId, user.id);
     isBlocked = !!blockByMe;
 
-    const blockByThem = db.prepare(
-      'SELECT id FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?'
+    const blockByThem = await db.prepare(
+      'SELECT id FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2'
     ).get(user.id, currentUserId);
     hasBlockedYou = !!blockByThem;
   }
@@ -81,12 +81,12 @@ router.get('/:username', (req, res) => {
 
 // ------- EDIT PROFILE -------
 
-router.get('/:username/edit', requireAuth, (req, res) => {
+router.get('/:username/edit', requireAuth, async (req, res) => {
   if (req.session.user.username !== req.params.username) {
     return res.redirect(`/profile/${req.params.username}`);
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const user = await db.prepare('SELECT * FROM users WHERE id = $1').get(req.session.user.id);
 
   res.render('pages/profile-edit', {
     title: 'Edit Profile - SyncUp',
@@ -98,14 +98,14 @@ router.get('/:username/edit', requireAuth, (req, res) => {
 router.post('/:username/edit', requireAuth, [
   body('full_name').trim().isLength({ min: 1, max: 100 }).withMessage('Full name is required'),
   body('bio').trim().isLength({ max: 500 }).withMessage('Bio must be under 500 characters'),
-], (req, res) => {
+], async (req, res) => {
   if (req.session.user.username !== req.params.username) {
     return res.redirect(`/profile/${req.params.username}`);
   }
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+    const user = await db.prepare('SELECT * FROM users WHERE id = $1').get(req.session.user.id);
     return res.render('pages/profile-edit', {
       title: 'Edit Profile - SyncUp',
       profileUser: { ...user, ...req.body },
@@ -115,8 +115,8 @@ router.post('/:username/edit', requireAuth, [
 
   const { full_name, bio } = req.body;
 
-  db.prepare(
-    "UPDATE users SET full_name = ?, bio = ?, updated_at = datetime('now') WHERE id = ?"
+  await db.prepare(
+    "UPDATE users SET full_name = $1, bio = $2, updated_at = NOW() WHERE id = $3"
   ).run(full_name, bio || '', req.session.user.id);
 
   // Update session data

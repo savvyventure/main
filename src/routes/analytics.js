@@ -16,51 +16,51 @@ function requireAdmin(req, res, next) {
 
 // ------- ANALYTICS DASHBOARD -------
 
-router.get('/', requireAuth, requireAdmin, (req, res) => {
+router.get('/', requireAuth, requireAdmin, async (req, res) => {
   // Page views today
-  const todayViews = db.prepare(`
+  const todayViews = parseInt((await db.prepare(`
     SELECT COUNT(*) AS count FROM page_views
-    WHERE date(created_at) = date('now')
-  `).get().count;
+    WHERE DATE(created_at) = CURRENT_DATE
+  `).get()).count);
 
   // Page views this week
-  const weekViews = db.prepare(`
+  const weekViews = parseInt((await db.prepare(`
     SELECT COUNT(*) AS count FROM page_views
-    WHERE created_at >= datetime('now', '-7 days')
-  `).get().count;
+    WHERE created_at >= NOW() - INTERVAL '7 days'
+  `).get()).count);
 
   // Total users
-  const totalUsers = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
+  const totalUsers = parseInt((await db.prepare('SELECT COUNT(*) AS count FROM users').get()).count);
 
   // Total events
-  const totalEvents = db.prepare('SELECT COUNT(*) AS count FROM events').get().count;
+  const totalEvents = parseInt((await db.prepare('SELECT COUNT(*) AS count FROM events').get()).count);
 
   // Total reviews
-  const totalReviews = db.prepare('SELECT COUNT(*) AS count FROM reviews').get().count;
+  const totalReviews = parseInt((await db.prepare('SELECT COUNT(*) AS count FROM reviews').get()).count);
 
   // Popular pages (top 10)
-  const popularPages = db.prepare(`
+  const popularPages = await db.prepare(`
     SELECT path, COUNT(*) AS views
     FROM page_views
-    WHERE created_at >= datetime('now', '-7 days')
+    WHERE created_at >= NOW() - INTERVAL '7 days'
     GROUP BY path
     ORDER BY views DESC
     LIMIT 10
   `).all();
 
   // Popular events (by views)
-  const popularEvents = db.prepare(`
+  const popularEvents = await db.prepare(`
     SELECT e.id, e.title, COUNT(pv.id) AS views
     FROM events e
     LEFT JOIN page_views pv ON pv.path = '/events/' || e.id
-    WHERE pv.created_at >= datetime('now', '-7 days') OR pv.created_at IS NULL
-    GROUP BY e.id
+    WHERE pv.created_at >= NOW() - INTERVAL '7 days' OR pv.created_at IS NULL
+    GROUP BY e.id, e.title
     ORDER BY views DESC
     LIMIT 5
   `).all();
 
   // Recent signups
-  const recentSignups = db.prepare(`
+  const recentSignups = await db.prepare(`
     SELECT id, username, created_at
     FROM users
     ORDER BY created_at DESC
@@ -68,11 +68,11 @@ router.get('/', requireAuth, requireAdmin, (req, res) => {
   `).all();
 
   // Views by day (last 7 days)
-  const viewsByDay = db.prepare(`
-    SELECT date(created_at) AS day, COUNT(*) AS views
+  const viewsByDay = await db.prepare(`
+    SELECT DATE(created_at) AS day, COUNT(*) AS views
     FROM page_views
-    WHERE created_at >= datetime('now', '-7 days')
-    GROUP BY date(created_at)
+    WHERE created_at >= NOW() - INTERVAL '7 days'
+    GROUP BY DATE(created_at)
     ORDER BY day ASC
   `).all();
 

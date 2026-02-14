@@ -23,9 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^11.7.0",
     "connect-pg-simple": "^10.0.0",
-    "connect-sqlite3": "^0.9.15",
     "ejs": "^3.1.10",
     "express": "^4.21.1",
     "express-session": "^1.18.1",

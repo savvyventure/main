@@ -5,19 +5,19 @@ const { requireAuth } = require('../middleware/auth');
 
 // ------- LIST NOTIFICATIONS -------
 
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   const userId = req.session.user.id;
 
-  const notifications = db.prepare(`
+  const notifications = await db.prepare(`
     SELECT * FROM notifications
-    WHERE user_id = ?
+    WHERE user_id = $1
     ORDER BY created_at DESC
     LIMIT 50
   `).all(userId);
 
   // Mark all as read
-  db.prepare(
-    'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0'
+  await db.prepare(
+    'UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE'
   ).run(userId);
 
   res.render('pages/notifications', {
