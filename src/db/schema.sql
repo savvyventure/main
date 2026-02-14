@@ -162,6 +162,21 @@ CREATE TABLE IF NOT EXISTS page_views (
 );
 
 -- ============================================================
+-- PASSWORD RESET TOKENS: for forgot password functionality
+-- ============================================================
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id            SERIAL PRIMARY KEY,
+    user_id       INTEGER NOT NULL REFERENCES users(id),    -- user who requested reset
+    token         TEXT    NOT NULL UNIQUE,                  -- unique reset token
+    expires_at    TIMESTAMP NOT NULL,                       -- token expiration time
+    used          BOOLEAN DEFAULT FALSE,                    -- whether token has been used
+    created_at    TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_user ON password_reset_tokens(user_id);
+
+-- ============================================================
 -- SESSION TABLE: for connect-pg-simple session store
 -- ============================================================
 CREATE TABLE IF NOT EXISTS session (
