@@ -1,22 +1,49 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const { Pool } = require('pg');
 
-// Database path from environment or default to /data directory
-const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', '..', 'data', 'syncup.db');
-const DATA_DIR = path.dirname(DB_PATH);
+// Use DATABASE_URL from environment (Railway provides this automatically)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
-// Create the data directory if it doesn't exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Wrapper to provide a similar API to better-sqlite3
+// This allows gradual migration with minimal code changes
+const db = {
+  // Execute a query that returns rows (SELECT)
+  prepare: (sql) => ({
+    // Get single row
+    get: async (...params) => {
+      const result = await pool.query(sql.replace(/\?/g, (_, i) => `$${params.indexOf(_) + 1}`), params);
+      return result.rows[0];
+    },
+    // Get all rows
+    all: async (...params) => {
+      const result = await pool.query(convertPlaceholders(sql), params);
+      return result.rows;
+    },
+    // Execute (INSERT, UPDATE, DELETE)
+    run: async (...params) => {
+      const result = await pool.query(convertPlaceholders(sql), params);
+      return {
+        changes: result.rowCount,
+        lastInsertRowid: result.rows?.[0]?.id
+      };
+    },
+  }),
+
+  // Execute raw SQL (for schema creation)
+  exec: async (sql) => {
+    await pool.query(sql);
+  },
+
+  // Get the pool for direct access if needed
+  pool,
+};
+
+// Convert SQLite ? placeholders to PostgreSQL $1, $2, etc.
+function convertPlaceholders(sql) {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
 }
-
-// Open (or create) the SQLite database file
-const db = new Database(DB_PATH);
-
-// Enable WAL mode for better performance with concurrent reads
-db.pragma('journal_mode = WAL');
-// Enforce foreign key constraints
-db.pragma('foreign_keys = ON');
 
 module.exports = db;

@@ -10,7 +10,7 @@
 
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const PgSession = require('connect-pg-simple')(session);
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -18,13 +18,9 @@ const { Server } = require('socket.io');
 // Environment configuration
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'syncup-dev-secret-change-in-production';
-const SESSIONS_PATH = process.env.SESSIONS_PATH || path.join(__dirname, '..', 'data');
 
-// Initialize the database (creates tables if they don't exist)
+// Initialize the database connection
 const db = require('./db/database');
-const fs = require('fs');
-const schema = fs.readFileSync(path.join(__dirname, 'db', 'schema.sql'), 'utf-8');
-db.exec(schema);
 
 // Create the Express app and an HTTP server (needed for Socket.io)
 const app = express();
@@ -51,9 +47,10 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Session middleware: keeps users logged in via a cookie
 app.use(session({
-  store: new SQLiteStore({
-    db: 'sessions.db',
-    dir: SESSIONS_PATH,
+  store: new PgSession({
+    pool: db.pool,
+    tableName: 'session',
+    createTableIfMissing: true,
   }),
   secret: SESSION_SECRET,
   resave: false,
@@ -67,26 +64,30 @@ app.use(session({
 }));
 
 // Make the logged-in user and notification count available to all templates
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   res.locals.notificationCount = 0;
   if (req.session.user) {
-    const row = db.prepare(
-      'SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0'
-    ).get(req.session.user.id);
-    res.locals.notificationCount = row.c;
+    try {
+      const row = await db.prepare(
+        'SELECT COUNT(*) AS c FROM notifications WHERE user_id = $1 AND is_read = FALSE'
+      ).get(req.session.user.id);
+      res.locals.notificationCount = row ? parseInt(row.c) : 0;
+    } catch (err) {
+      // Silently fail - notifications aren't critical
+    }
   }
   next();
 });
 
 // Page view tracking (skip static assets and API routes)
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   // Only track GET requests for actual pages
   if (req.method === 'GET' && !req.path.match(/\.(css|js|png|jpg|ico|svg|woff|woff2)$/)) {
     try {
-      db.prepare(`
+      await db.prepare(`
         INSERT INTO page_views (path, user_id, session_id, referrer, user_agent)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5)
       `).run(
         req.path,
         req.session.user ? req.session.user.id : null,
@@ -148,9 +149,33 @@ app.use((err, req, res, _next) => {
   });
 });
 
-// ------- START SERVER -------
+// ------- DATABASE INIT & START SERVER -------
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`SyncUp is running at http://localhost:${PORT}`);
-});
+const fs = require('fs');
+const schemaPath = path.join(__dirname, 'db', 'schema.sql');
+
+async function startServer() {
+  try {
+    // Initialize database schema
+    const schema = fs.readFileSync(schemaPath, 'utf-8');
+    // Split by semicolon and execute each statement
+    const statements = schema.split(';').filter(s => s.trim());
+    for (const statement of statements) {
+      if (statement.trim()) {
+        await db.pool.query(statement);
+      }
+    }
+    console.log('Database schema initialized');
+
+    // Start the server
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log(`SyncUp is running at http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
