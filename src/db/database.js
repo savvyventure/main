@@ -13,7 +13,7 @@ const db = {
   prepare: (sql) => ({
     // Get single row
     get: async (...params) => {
-      const result = await pool.query(sql.replace(/\?/g, (_, i) => `$${params.indexOf(_) + 1}`), params);
+      const result = await pool.query(convertPlaceholders(sql), params);
       return result.rows[0];
     },
     // Get all rows

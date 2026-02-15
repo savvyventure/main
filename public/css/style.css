@@ -1593,3 +1593,41 @@ img {
     flex-direction: column;
   }
 }
+
+/* --- Missing/Additional Utility Classes --- */
+.form-help {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+
+.form-help a {
+  color: var(--primary-light);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.review-stars {
+  display: inline-flex;
+  gap: 0.1rem;
+  color: #fbbf24;
+}
+
+.blocked-section {
+  margin-top: 1.5rem;
+}
+
+.blocked-section summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+}
+
+.blocked-section summary:hover {
+  color: var(--text);
+}

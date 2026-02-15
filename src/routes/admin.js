@@ -93,20 +93,35 @@ router.post('/users/:id/delete', requireAuth, requireAdmin, async (req, res) => 
     return res.redirect('/admin/users?error=Cannot delete your own account');
   }
 
-  // Delete user's data (cascade)
-  await db.prepare('DELETE FROM review_votes WHERE user_id = $1').run(userId);
-  await db.prepare('DELETE FROM reviews WHERE user_id = $1').run(userId);
-  await db.prepare('DELETE FROM table_bookings WHERE user_id = $1').run(userId);
-  await db.prepare('DELETE FROM vip_tables WHERE host_id = $1').run(userId);
-  await db.prepare('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1').run(userId);
-  await db.prepare('DELETE FROM chat_consent WHERE requester_id = $1 OR target_id = $1').run(userId);
-  await db.prepare('DELETE FROM notifications WHERE user_id = $1').run(userId);
-  await db.prepare('DELETE FROM user_blocks WHERE blocker_id = $1 OR blocked_id = $1').run(userId);
-  await db.prepare('DELETE FROM page_views WHERE user_id = $1').run(userId);
-  await db.prepare('DELETE FROM events WHERE creator_id = $1').run(userId);
-  await db.prepare('DELETE FROM users WHERE id = $1').run(userId);
+  // Use a transaction to ensure all deletes succeed or none do
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  res.redirect('/admin/users?success=User deleted');
+    // Delete user's data (cascade) - order matters for foreign keys
+    await client.query('DELETE FROM review_votes WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM review_votes WHERE review_id IN (SELECT id FROM reviews WHERE user_id = $1)', [userId]);
+    await client.query('DELETE FROM reviews WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM table_bookings WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM vip_tables WHERE host_id = $1', [userId]);
+    await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]);
+    await client.query('DELETE FROM chat_consent WHERE requester_id = $1 OR target_id = $1', [userId]);
+    await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM user_blocks WHERE blocker_id = $1 OR blocked_id = $1', [userId]);
+    await client.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM page_views WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM events WHERE creator_id = $1', [userId]);
+    await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    await client.query('COMMIT');
+    res.redirect('/admin/users?success=User deleted');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Failed to delete user:', err);
+    res.redirect('/admin/users?error=Failed to delete user');
+  } finally {
+    client.release();
+  }
 });
 
 module.exports = router;
