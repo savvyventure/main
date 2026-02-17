@@ -3,14 +3,14 @@
 <!-- Hero Section -->
 <section class="hero">
   <div class="hero-content">
-    <h1>Find Your Vibe</h1>
-    <p>Discover events, share VIP tables, and connect with fellow party enthusiasts.</p>
+    <h1>Find Your Vibe, Build Your Tribe</h1>
+    <p class="hero-lead">SyncUp is a real community for real people. Discover authentic events, meet fellow enthusiasts, and share unforgettable nights — together.</p>
     <div class="hero-actions">
       <a href="/events" class="btn btn-primary btn-lg">Browse Events</a>
       <% if (!currentUser) { %>
-        <a href="/auth/signup" class="btn btn-outline btn-lg">Join SyncUp</a>
+        <a href="/auth/signup" class="btn btn-outline btn-lg">Join the Community</a>
       <% } else { %>
-        <a href="/events/new/create" class="btn btn-outline btn-lg">Create Event</a>
+        <a href="/events/new/create" class="btn btn-outline btn-lg">Share an Event</a>
       <% } %>
     </div>
   </div>
@@ -55,6 +55,28 @@
       <div class="feature-icon">&#11088;</div>
       <h3>Rate & Review</h3>
       <p>Share your experiences. Help others find the best events and artists.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section community-section">
+  <h2 class="section-title">Real People, Real Events</h2>
+  <p class="section-subtitle">SyncUp is built on authenticity. We're a community of genuine party enthusiasts — no bots, no spam, just people who love great music and great nights.</p>
+  <div class="values-grid">
+    <div class="value-card">
+      <div class="value-icon">🤝</div>
+      <h3>Be Authentic</h3>
+      <p>Use your real identity. Real connections start with real people.</p>
+    </div>
+    <div class="value-card">
+      <div class="value-icon">🛡️</div>
+      <h3>Stay Respectful</h3>
+      <p>Every member deserves a safe, welcoming space to enjoy events.</p>
+    </div>
+    <div class="value-card">
+      <div class="value-icon">🌍</div>
+      <h3>Build Community</h3>
+      <p>Share tables, share experiences, share the love for music and culture.</p>
     </div>
   </div>
 </section>

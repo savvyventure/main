@@ -147,6 +147,24 @@ router.post('/logout', (req, res) => {
   });
 });
 
+// ------- GOOGLE OAUTH -------
+const passport = require('../utils/passport');
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }), (req, res) => {
+  req.session.user = { id: req.user.id, username: req.user.username, email: req.user.email, full_name: req.user.full_name, avatar_url: req.user.avatar_url };
+  res.redirect('/');
+});
+
+// ------- FACEBOOK OAUTH -------
+router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+
+router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/auth/login' }), (req, res) => {
+  req.session.user = { id: req.user.id, username: req.user.username, email: req.user.email, full_name: req.user.full_name, avatar_url: req.user.avatar_url };
+  res.redirect('/');
+});
+
 // ------- FORGOT PASSWORD -------
 
 router.get('/forgot-password', redirectIfAuth, (req, res) => {

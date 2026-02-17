@@ -11,7 +11,41 @@
     </div>
   <% } %>
 
-  <form action="/profile/<%= profileUser.username %>/edit" method="POST" class="form">
+  <form action="/profile/<%= profileUser.username %>/edit" method="POST" class="form" enctype="multipart/form-data">
+    <div class="form-group">
+      <label>Avatar</label>
+      <div class="avatar-current">
+        <img src="<%= profileUser.avatar_url %>" alt="Current avatar" class="avatar avatar-lg">
+        <span class="text-muted">Current avatar</span>
+      </div>
+
+      <p class="form-help">Choose a preset:</p>
+      <div class="avatar-presets">
+        <% const presets = [
+          { value: '/images/avatars/preset-1.svg', emoji: '🎵', bg: '#6366f1' },
+          { value: '/images/avatars/preset-2.svg', emoji: '🎸', bg: '#ec4899' },
+          { value: '/images/avatars/preset-3.svg', emoji: '🎭', bg: '#f59e0b' },
+          { value: '/images/avatars/preset-4.svg', emoji: '🦋', bg: '#10b981' },
+          { value: '/images/avatars/preset-5.svg', emoji: '🌙', bg: '#8b5cf6' },
+          { value: '/images/avatars/preset-6.svg', emoji: '🔥', bg: '#ef4444' },
+          { value: '/images/avatars/preset-7.svg', emoji: '⚡', bg: '#3b82f6' },
+          { value: '/images/avatars/preset-8.svg', emoji: '🎤', bg: '#06b6d4' },
+        ]; %>
+        <% presets.forEach((preset, i) => { %>
+          <label class="avatar-preset-option">
+            <input type="radio" name="avatar_preset" value="<%= preset.value %>"
+                   <%= profileUser.avatar_url === preset.value ? 'checked' : '' %>>
+            <span class="avatar-preset-img" style="background: <%= preset.bg %>;">
+              <%= preset.emoji %>
+            </span>
+          </label>
+        <% }) %>
+      </div>
+
+      <p class="form-help" style="margin-top: 1rem;">Or upload your own (max 2MB):</p>
+      <input type="file" name="avatar_file" accept="image/*" class="form-file-input">
+    </div>
+
     <div class="form-group">
       <label for="full_name">Full Name</label>
       <input type="text" id="full_name" name="full_name" required

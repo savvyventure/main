@@ -3,6 +3,30 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const db = require('../db/database');
 const { requireAuth } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../../public/uploads/avatars');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `user-${req.session.user.id}-${Date.now()}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only images allowed'));
+    cb(null, true);
+  },
+});
 
 // ------- VIEW PROFILE -------
 
@@ -95,7 +119,7 @@ router.get('/:username/edit', requireAuth, async (req, res) => {
   });
 });
 
-router.post('/:username/edit', requireAuth, [
+router.post('/:username/edit', requireAuth, upload.single('avatar_file'), [
   body('full_name').trim().isLength({ min: 1, max: 100 }).withMessage('Full name is required'),
   body('bio').trim().isLength({ max: 500 }).withMessage('Bio must be under 500 characters'),
 ], async (req, res) => {
@@ -115,9 +139,24 @@ router.post('/:username/edit', requireAuth, [
 
   const { full_name, bio } = req.body;
 
-  await db.prepare(
-    "UPDATE users SET full_name = $1, bio = $2, updated_at = NOW() WHERE id = $3"
-  ).run(full_name, bio || '', req.session.user.id);
+  // Determine new avatar_url
+  let avatar_url = null;
+  if (req.file) {
+    avatar_url = '/uploads/avatars/' + req.file.filename;
+  } else if (req.body.avatar_preset) {
+    avatar_url = req.body.avatar_preset;
+  }
+
+  if (avatar_url) {
+    await db.prepare(
+      "UPDATE users SET full_name = $1, bio = $2, avatar_url = $3, updated_at = NOW() WHERE id = $4"
+    ).run(full_name, bio || '', avatar_url, req.session.user.id);
+    req.session.user.avatar_url = avatar_url;
+  } else {
+    await db.prepare(
+      "UPDATE users SET full_name = $1, bio = $2, updated_at = NOW() WHERE id = $3"
+    ).run(full_name, bio || '', req.session.user.id);
+  }
 
   // Update session data
   req.session.user.full_name = full_name;

@@ -187,6 +187,12 @@ CREATE TABLE IF NOT EXISTS session (
 
 CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire);
 
+-- Add social auth columns if they don't exist (for OAuth)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_id TEXT UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'local';
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+
 -- ============================================================
 -- INDEXES: make searches faster
 -- ============================================================

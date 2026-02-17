@@ -70,10 +70,18 @@
     </div>
 
     <div class="form-row">
-      <div class="form-group">
-        <label for="price">Ticket Price ($)</label>
+      <div class="form-group" style="flex: 2;">
+        <label for="price">Ticket Price</label>
         <input type="number" id="price" name="price" min="0" step="0.01"
                value="<%= event ? event.price || 0 : 0 %>">
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label for="currency">Currency</label>
+        <select id="currency" name="currency" class="form-select">
+          <option value="USD" <%= (!event || event.currency === 'USD') ? 'selected' : '' %>>USD – Dollar</option>
+          <option value="EUR" <%= (event && event.currency === 'EUR') ? 'selected' : '' %>>EUR – Euro</option>
+          <option value="AED" <%= (event && event.currency === 'AED') ? 'selected' : '' %>>AED – Dirham</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="capacity">Capacity</label>
