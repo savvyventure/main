@@ -116,15 +116,6 @@ router.post('/login', redirectIfAuth, [
     });
   }
 
-  // OAuth users have no password — direct them to use social login
-  if (!user.password_hash) {
-    return res.render('pages/login', {
-      title: 'Log In - SyncUp',
-      errors: [{ msg: 'This account uses social login. Please sign in with Google or Facebook.' }],
-      formData: req.body,
-    });
-  }
-
   // Compare the entered password with the stored hash
   const match = await bcrypt.compare(password, user.password_hash);
 
@@ -154,44 +145,6 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/');
   });
-});
-
-// ------- GOOGLE OAUTH -------
-const passport = require('../utils/passport');
-
-router.get('/google', (req, res, next) => {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return res.redirect('/auth/login');
-  }
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
-});
-
-router.get('/google/callback', (req, res, next) => {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return res.redirect('/auth/login');
-  }
-  passport.authenticate('google', { failureRedirect: '/auth/login' })(req, res, next);
-}, (req, res) => {
-  req.session.user = { id: req.user.id, username: req.user.username, email: req.user.email, full_name: req.user.full_name, avatar_url: req.user.avatar_url };
-  res.redirect('/');
-});
-
-// ------- FACEBOOK OAUTH -------
-router.get('/facebook', (req, res, next) => {
-  if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
-    return res.redirect('/auth/login');
-  }
-  passport.authenticate('facebook', { scope: ['email'] })(req, res, next);
-});
-
-router.get('/facebook/callback', (req, res, next) => {
-  if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
-    return res.redirect('/auth/login');
-  }
-  passport.authenticate('facebook', { failureRedirect: '/auth/login' })(req, res, next);
-}, (req, res) => {
-  req.session.user = { id: req.user.id, username: req.user.username, email: req.user.email, full_name: req.user.full_name, avatar_url: req.user.avatar_url };
-  res.redirect('/');
 });
 
 // ------- FORGOT PASSWORD -------

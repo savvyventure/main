@@ -22,7 +22,6 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'syncup-dev-secret-change-i
 
 // Initialize the database connection
 const db = require('./db/database');
-const passport = require('./utils/passport');
 
 // Create the Express app and an HTTP server (needed for Socket.io)
 const app = express();
@@ -64,9 +63,6 @@ app.use(session({
     secure: NODE_ENV === 'production', // HTTPS only in production
   },
 }));
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Make the logged-in user and notification count available to all templates
 app.use(async (req, res, next) => {
