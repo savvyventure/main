@@ -43,7 +43,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
       // Create new user
       const username = (profile.displayName || email?.split('@')[0] || `user${Date.now()}`).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30) + Math.floor(Math.random() * 100);
-      const avatar = profile.photos?.[0]?.value || '/images/default-avatar.png';
+      const avatar = profile.photos?.[0]?.value || '/images/default-avatar.svg';
       const result = await db.pool.query(
         'INSERT INTO users (username, email, full_name, avatar_url, google_id, auth_provider, password_hash) VALUES ($1, $2, $3, $4, $5, $6, NULL) RETURNING *',
         [username, email || null, profile.displayName || username, avatar, profile.id, 'google']
@@ -77,7 +77,7 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
       }
 
       const username = (profile.displayName || `user${Date.now()}`).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 28) + Math.floor(Math.random() * 100);
-      const avatar = profile.photos?.[0]?.value || '/images/default-avatar.png';
+      const avatar = profile.photos?.[0]?.value || '/images/default-avatar.svg';
       const result = await db.pool.query(
         'INSERT INTO users (username, email, full_name, avatar_url, facebook_id, auth_provider, password_hash) VALUES ($1, $2, $3, $4, $5, $6, NULL) RETURNING *',
         [username, email || null, profile.displayName || username, avatar, profile.id, 'facebook']

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">
+  <rect width="400" height="200" fill="#1a1a2e"/>
+  <text x="200" y="90" font-size="48" text-anchor="middle" fill="#6c63ff">🎵</text>
+  <text x="200" y="140" font-size="18" text-anchor="middle" fill="#9999cc" font-family="sans-serif">SyncUp Event</text>
+</svg>

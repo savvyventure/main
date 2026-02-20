@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT    NOT NULL,                        -- hashed password (never store plain text!)
     full_name     TEXT    NOT NULL,                        -- real name
     bio           TEXT    DEFAULT '',                      -- short about-me blurb
-    avatar_url    TEXT    DEFAULT '/images/default-avatar.png',
+    avatar_url    TEXT    DEFAULT '/images/default-avatar.svg',
     created_at    TIMESTAMP DEFAULT NOW(),                 -- when they signed up
     updated_at    TIMESTAMP DEFAULT NOW()
 );
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS events (
     price         REAL    DEFAULT 0,                       -- ticket price (0 = free)
     currency      TEXT    DEFAULT 'USD',
     capacity      INTEGER DEFAULT 0,                       -- 0 means unlimited
-    image_url     TEXT    DEFAULT '/images/default-event.png',
+    image_url     TEXT    DEFAULT '/images/default-event.svg',
     status        TEXT    DEFAULT 'active',                -- active, cancelled, completed
     created_at    TIMESTAMP DEFAULT NOW(),
     updated_at    TIMESTAMP DEFAULT NOW()

@@ -9,6 +9,7 @@
 // =============================================================
 
 const express = require('express');
+require('express-async-errors'); // Must be required before routes - auto-catches async errors
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const path = require('path');
@@ -162,11 +163,18 @@ async function startServer() {
   try {
     // Initialize database schema
     const schema = fs.readFileSync(schemaPath, 'utf-8');
-    // Split by semicolon and execute each statement
-    const statements = schema.split(';').filter(s => s.trim());
+    // Split by semicolon, skip empty and comment-only statements
+    const statements = schema.split(';')
+      .map(s => s.trim())
+      .filter(s => s && s.replace(/--[^\n]*/g, '').trim().length > 0);
     for (const statement of statements) {
-      if (statement.trim()) {
+      try {
         await db.pool.query(statement);
+      } catch (err) {
+        // Log but don't crash on non-fatal schema errors (e.g. index already exists)
+        if (!err.message.includes('already exists')) {
+          console.error('Schema statement error:', err.message);
+        }
       }
     }
     console.log('Database schema initialized');

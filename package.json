@@ -11,8 +11,7 @@
     "dev": "node --watch src/server.js",
     "db:init": "node src/db/init.js",
     "db:seed": "node src/db/seed.js",
-    "db:reset": "npm run db:seed",
-    "postinstall": "npm run db:init || true"
+    "db:reset": "npm run db:seed"
   },
   "keywords": [
     "events",
@@ -26,6 +25,7 @@
     "connect-pg-simple": "^10.0.0",
     "ejs": "^3.1.10",
     "express": "^4.21.1",
+    "express-async-errors": "^3.1.1",
     "express-session": "^1.18.1",
     "express-validator": "^7.2.1",
     "multer": "^1.4.5-lts.1",
