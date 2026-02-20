@@ -116,6 +116,15 @@ router.post('/login', redirectIfAuth, [
     });
   }
 
+  // Safety check: handle users with no password (shouldn't happen, but prevents crashes)
+  if (!user.password_hash) {
+    return res.render('pages/login', {
+      title: 'Log In - SyncUp',
+      errors: [{ msg: 'Invalid email or password' }],
+      formData: req.body,
+    });
+  }
+
   // Compare the entered password with the stored hash
   const match = await bcrypt.compare(password, user.password_hash);
 
